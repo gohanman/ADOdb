@@ -538,6 +538,8 @@ if (!defined('_ADODB_LAYER')) {
 	function Connect($argHostname = "", $argUsername = "", $argPassword = "", $argDatabaseName = "", $forceNew = false)
 	{
 		if ($argHostname != "") $this->host = $argHostname;
+		if ( strpos($this->host, ':') > 0 && isset($this->port) )
+			list($this->host, $this->port) = explode(":", $this->host, 2);
 		if ($argUsername != "") $this->user = $argUsername;
 		if ($argPassword != "") $this->password = 'not stored'; // not stored for security reasons
 		if ($argDatabaseName != "") $this->database = $argDatabaseName;
@@ -604,6 +606,8 @@ if (!defined('_ADODB_LAYER')) {
 			return $this->Connect($argHostname,$argUsername,$argPassword,$argDatabaseName);
 
 		if ($argHostname != "") $this->host = $argHostname;
+		if ( strpos($this->host, ':') > 0 && isset($this->port) )
+			list($this->host, $this->port) = explode(":", $this->host, 2);
 		if ($argUsername != "") $this->user = $argUsername;
 		if ($argPassword != "") $this->password = 'not stored';
 		if ($argDatabaseName != "") $this->database = $argDatabaseName;
