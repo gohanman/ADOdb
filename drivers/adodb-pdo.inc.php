@@ -213,7 +213,7 @@ class ADODB_pdo extends ADOConnection {
 	function Concat()
 	{
 		$args = func_get_args();
-		if(method_exists($this->_driver, 'Concat')) {
+		if(isset($this->_driver) && method_exists($this->_driver, 'Concat')) 
 			return call_user_func_array(array($this->_driver, 'Concat'), $args);
 		}
 
@@ -344,7 +344,7 @@ class ADODB_pdo extends ADOConnection {
 
 	function SetTransactionMode($transaction_mode)
 	{
-		if(method_exists($this->_driver, 'SetTransactionMode')) {
+		if(isset($this->_driver) && method_exists($this->_driver, 'SetTransactionMode')) 
 			return $this->_driver->SetTransactionMode($transaction_mode);
 		}
 
@@ -353,7 +353,7 @@ class ADODB_pdo extends ADOConnection {
 
 	function BeginTrans()
 	{
-		if(method_exists($this->_driver, 'BeginTrans')) {
+		if(isset($this->_driver) && method_exists($this->_driver, 'BeginTrans')) 
 			return $this->_driver->BeginTrans();
 		}
 
@@ -372,7 +372,7 @@ class ADODB_pdo extends ADOConnection {
 
 	function CommitTrans($ok=true)
 	{
-		if(method_exists($this->_driver, 'CommitTrans')) {
+		if(isset($this->_driver) && method_exists($this->_driver, 'CommitTrans')) 
 			return $this->_driver->CommitTrans($ok);
 		}
 
@@ -397,7 +397,7 @@ class ADODB_pdo extends ADOConnection {
 
 	function RollbackTrans()
 	{
-		if(method_exists($this->_driver, 'RollbackTrans')) {
+		if(isset($this->_driver) && method_exists($this->_driver, 'RollbackTrans')) 
 			return $this->_driver->RollbackTrans();
 		}
 
@@ -439,7 +439,7 @@ class ADODB_pdo extends ADOConnection {
 
 	function CreateSequence($seqname='adodbseq',$startID=1)
 	{
-		if(method_exists($this->_driver, 'CreateSequence')) {
+		if(isset($this->_driver) && method_exists($this->_driver, 'CreateSequence')) 
 			return $this->_driver->CreateSequence($seqname, $startID);
 		}
 
@@ -448,7 +448,7 @@ class ADODB_pdo extends ADOConnection {
 
 	function DropSequence($seqname='adodbseq')
 	{
-		if(method_exists($this->_driver, 'DropSequence')) {
+		if(isset($this->_driver) && method_exists($this->_driver, 'DropSequence')) 
 			return $this->_driver->DropSequence($seqname);
 		}
 
@@ -457,7 +457,7 @@ class ADODB_pdo extends ADOConnection {
 
 	function GenID($seqname='adodbseq',$startID=1)
 	{
-		if(method_exists($this->_driver, 'GenID')) {
+		if(isset($this->_driver) && method_exists($this->_driver, 'GenID')) 
 			return $this->_driver->GenID($seqname, $startID);
 		}
 
