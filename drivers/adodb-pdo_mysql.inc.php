@@ -10,6 +10,9 @@
 
 */
 
+if (!class_exists('ADODB_pdo'))
+	include(dirname(__FILE__).'/adodb-pdo.inc.php');
+
 class ADODB_pdo_mysql extends ADODB_pdo {
 
 	var $metaTablesSQL = "SELECT
@@ -34,8 +37,8 @@ class ADODB_pdo_mysql extends ADODB_pdo {
 		$parentDriver->_connectionID->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
 	}
 
-	// dayFraction is a day in floating point
-	function OffsetDate($dayFraction, $date=false)
+		// dayFraction is a day in floating point
+	function OffsetDate($dayFraction,$date=false)
 	{
 		if (!$date) {
 			$date = $this->sysDate;
