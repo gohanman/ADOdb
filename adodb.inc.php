@@ -14,7 +14,9 @@
 /**
 	\mainpage
 
-	@version V5.20dev  ??-???-2014  (c) 2000-2014 John Lim (jlim#natsoft.com). All rights reserved.
+	@version   v5.21dev  ??-???-2015
+	@copyright (c) 2000-2013 John Lim (jlim#natsoft.com). All rights reserved.
+	@copyright (c) 2014      Damien Regad, Mark Newnham and the ADOdb community
 
 	Released under both BSD license and Lesser GPL library license. You can choose which license
 	you prefer.
@@ -86,7 +88,7 @@ if (!defined('_ADODB_LAYER')) {
 	// ********************************************************
 
 
-
+	if (!$ADODB_EXTENSION || ADODB_EXTENSION < 4.0) {
 
 		define('ADODB_BAD_RS','<p>Bad $rs in %s. Connection or SQL invalid. Try using $connection->debug=true;</p>');
 
@@ -99,26 +101,54 @@ if (!defined('_ADODB_LAYER')) {
 		}
 
 
-	/*
-	Controls ADODB_FETCH_ASSOC field-name case. Default is 2, use native case-names.
-	This currently works only with mssql, odbc, oci8po and ibase derived drivers.
+	/**
+	 * Fetch mode
+	 *
+	 * Set global variable $ADODB_FETCH_MODE to one of these constants or use
+	 * the SetFetchMode() method to control how recordset fields are returned
+	 * when fetching data.
+	 *
+	 *   - NUM:     array()
+	 *   - ASSOC:   array('id' => 456, 'name' => 'john')
+	 *   - BOTH:    array(0 => 456, 'id' => 456, 1 => 'john', 'name' => 'john')
+	 *   - DEFAULT: driver-dependent
+	 */
+		define('ADODB_FETCH_DEFAULT', 0);
+		define('ADODB_FETCH_NUM', 1);
+		define('ADODB_FETCH_ASSOC', 2);
+		define('ADODB_FETCH_BOTH', 3);
 
-		0 = assoc lowercase field names. $rs->fields['orderid']
-		1 = assoc uppercase field names. $rs->fields['ORDERID']
-		2 = use native-case field names. $rs->fields['OrderID']
-	*/
+	/**
+	 * Associative array case constants
+	 *
+	 * By defining the ADODB_ASSOC_CASE constant to one of these values, it is
+	 * possible to control the case of field names (associative array's keys)
+	 * when operating in ADODB_FETCH_ASSOC fetch mode.
+	 *   - LOWER:  $rs->fields['orderid']
+	 *   - UPPER:  $rs->fields['ORDERID']
+	 *   - NATIVE: $rs->fields['OrderID'] (or whatever the RDBMS will return)
+	 *
+	 * The default is to use native case-names.
+	 *
+	 * NOTE: This functionality is not implemented everywhere, it currently
+	 * works only with: mssql, odbc, oci8 and ibase derived drivers
+	 */
 		define('ADODB_ASSOC_CASE_LOWER', 0);
 		define('ADODB_ASSOC_CASE_UPPER', 1);
 		define('ADODB_ASSOC_CASE_NATIVE', 2);
 
-		define('ADODB_FETCH_DEFAULT',0);
-		define('ADODB_FETCH_NUM',1);
-		define('ADODB_FETCH_ASSOC',2);
-		define('ADODB_FETCH_BOTH',3);
 
 		if (!defined('TIMESTAMP_FIRST_YEAR')) {
 			define('TIMESTAMP_FIRST_YEAR',100);
 		}
+
+		/**
+		 * AutoExecute constants
+		 * (moved from adodb-pear.inc.php since they are only used in here)
+		 */
+		define('DB_AUTOQUERY_INSERT', 1);
+		define('DB_AUTOQUERY_UPDATE', 2);
+
 
 		// PHP's version scheme makes converting to numbers difficult - workaround
 		$_adodb_ver = (float) PHP_VERSION;
@@ -126,14 +156,11 @@ if (!defined('_ADODB_LAYER')) {
 			define('ADODB_PHPVER',0x5200);
 		} else if ($_adodb_ver >= 5.0) {
 			define('ADODB_PHPVER',0x5000);
-		} else
+		} else {
 			die("PHP5 or later required. You are running ".PHP_VERSION);
+		}
+		unset($_adodb_ver);
 	}
-
-
-	//if (!defined('ADODB_ASSOC_CASE')) {
-	//	define('ADODB_ASSOC_CASE',2);
-	//}
 
 
 	/**
@@ -190,7 +217,7 @@ if (!defined('_ADODB_LAYER')) {
 		/**
 		 * ADODB version as a string.
 		 */
-		$ADODB_vers = 'V5.20dev  ??-???-2014  (c) 2000-2014 John Lim (jlim#natsoft.com). All rights reserved. Released BSD & LGPL.';
+		$ADODB_vers = 'v5.21dev  ??-???-2015';
 
 		/**
 		 * Determines whether recordset->RecordCount() is used.
@@ -279,7 +306,7 @@ if (!defined('_ADODB_LAYER')) {
 
 		var $createdir = true; // requires creation of temp dirs
 
-		function ADODB_Cache_File() {
+		function __construct() {
 			global $ADODB_INCLUDED_CSV;
 			if (empty($ADODB_INCLUDED_CSV)) {
 				include_once(ADODB_DIR.'/adodb-csvlib.inc.php');
@@ -480,15 +507,60 @@ if (!defined('_ADODB_LAYER')) {
 	var $_transmode = ''; // transaction mode
 
 
+	/**
+	 * Default Constructor.
+	 * We define it even though it does not actually do anything. This avoids
+	 * getting a PHP Fatal error:  Cannot call constructor if a subclass tries
+	 * to call its parent constructor.
+	 */
+	public function __construct()
+	{
+	}
+
+	/*
+	 * Additional parameters that may be passed to drivers in the connect string
+	 * Driver must be coded to accept the parameters
+	 */
+	protected $connectionParameters = array();
+
+	/**
+	* Adds a parameter to the connection string.
+	*
+	* These parameters are added to the connection string when connecting,
+	* if the driver is coded to use it.
+	*
+	* @param	string	$parameter	The name of the parameter to set
+	* @param	string	$value		The value of the parameter
+	*
+	* @return null
+	*
+	* @example, for mssqlnative driver ('CharacterSet','UTF-8')
+	*/
+	final public function setConnectionParameter($parameter,$value)
+	{
+
+		$this->connectionParameters[$parameter] = $value;
+
+	}
+
 	static function Version() {
 		global $ADODB_vers;
 
-		$ok = preg_match( '/^[Vv]?([0-9]\.[0-9]+(dev|[a-z])?)/', $ADODB_vers, $matches );
-		if (!$ok) {
-			return (float) substr($ADODB_vers,1);
-		} else {
-			return $matches[1];
+		// Semantic Version number matching regex
+		$regex = '^[vV]?(\d+\.\d+\.\d+'         // Version number (X.Y.Z) with optional 'V'
+			. '(?:-(?:'                         // Optional preprod version: a '-'
+			. 'dev|'                            // followed by 'dev'
+			. '(?:(?:alpha|beta|rc)(?:\.\d+))'  // or a preprod suffix and version number
+			. '))?)(?:\s|$)';                   // Whitespace or end of string
+
+		if (!preg_match("/$regex/", $ADODB_vers, $matches)) {
+			// This should normally not happen... Return whatever is between the start
+			// of the string and the first whitespace (or the end of the string).
+			self::outp("Invalid version number: '$ADODB_vers'", 'Version');
+			$regex = '^[vV]?(.*?)(?:\s|$)';
+			preg_match("/$regex/", $ADODB_vers, $matches);
 		}
+		return $matches[1];
 	}
 
 	/**
@@ -573,7 +645,7 @@ if (!defined('_ADODB_LAYER')) {
 		}
 		if ( strpos($this->host, ':') > 0 && isset($this->port) ) {
 			list($this->host, $this->port) = explode(":", $this->host, 2);
-        }
+        	}
 		if ($argUsername != "") {
 			$this->user = $argUsername;
 		}
@@ -656,7 +728,7 @@ if (!defined('_ADODB_LAYER')) {
 		}
 		if ( strpos($this->host, ':') > 0 && isset($this->port) ) {
 			list($this->host, $this->port) = explode(":", $this->host, 2);
-        }
+	        }
 		if ($argUsername != "") {
 			$this->user = $argUsername;
 		}
@@ -709,7 +781,7 @@ if (!defined('_ADODB_LAYER')) {
 			global $ADODB_INCLUDED_MEMCACHE;
 
 			if (empty($ADODB_INCLUDED_MEMCACHE)) {
-				include(ADODB_DIR.'/adodb-memcache.lib.inc.php');
+				include_once(ADODB_DIR.'/adodb-memcache.lib.inc.php');
 			}
 			$ADODB_CACHE = new ADODB_Cache_MemCache($this);
 		} else {
@@ -1051,8 +1123,21 @@ if (!defined('_ADODB_LAYER')) {
 			unset($element0);
 
 			if (!is_array($sql) && !$this->_bindInputArray) {
+				// @TODO this would consider a '?' within a string as a parameter...
 				$sqlarr = explode('?',$sql);
 				$nparams = sizeof($sqlarr)-1;
+
+				// Make sure the number of parameters provided in the input
+				// array matches what the query expects
+				if ($nparams != count($inputarr)) {
+					$this->outp_throw(
+						"Input array has " . count($inputarr) .
+						" params, does not match query: '" . htmlspecialchars($sql) . "'",
+						'Execute'
+					);
+					return false;
+				}
+
 				if (!$array_2d) {
 					$inputarr = array($inputarr);
 				}
@@ -1128,8 +1213,15 @@ if (!defined('_ADODB_LAYER')) {
 		return $ret;
 	}
 
-
 	function _Execute($sql,$inputarr=false) {
+		// ExecuteCursor() may send non-string queries (such as arrays),
+		// so we need to ignore those.
+		if( is_string($sql) ) {
+			// Strips keyword used to help generate SELECT COUNT(*) queries
+			// from SQL if it exists.
+			$sql = ADODB_str_replace( '_ADODB_COUNT', '', $sql );
+		}
+
 		if ($this->debug) {
 			global $ADODB_INCLUDED_LIB;
 			if (empty($ADODB_INCLUDED_LIB)) {
@@ -1842,8 +1934,9 @@ if (!defined('_ADODB_LAYER')) {
 	function CacheFlush($sql=false,$inputarr=false) {
 		global $ADODB_CACHE_DIR, $ADODB_CACHE;
 
+		# Create cache if it does not exist
 		if (empty($ADODB_CACHE)) {
-			return false;
+			$this->_CreateCache();
 		}
 
 		if (!$sql) {
@@ -2150,8 +2243,13 @@ if (!defined('_ADODB_LAYER')) {
 		return $blob;
 	}
 
+	function GetCharSet() {
+		return $this->charSet;
+	}
+
 	function SetCharSet($charset) {
-		return false;
+		$this->charSet = $charset;
+		return true;
 	}
 
 	function IfNull( $field, $ifNull ) {
@@ -2173,10 +2271,6 @@ if (!defined('_ADODB_LAYER')) {
 			$this->_affected = false;
 		}
 		return $old;
-	}
-
-	function GetCharSet() {
-		return false;
 	}
 
 	/**
@@ -3161,8 +3255,12 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 	 * @param queryID	this is the queryID returned by ADOConnection->_query()
 	 *
 	 */
-	function ADORecordSet($queryID) {
+	function __construct($queryID) {
 		$this->_queryID = $queryID;
+	}
+
+	function __destruct() {
+		$this->Close();
 	}
 
 	function getIterator() {
@@ -3354,7 +3452,15 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 		if ($cols < 2) {
 			return false;
 		}
-		$numIndex = is_array($this->fields) && array_key_exists(0, $this->fields);
+
+		// Empty recordset
+		if (!$this->fields) {
+			return array();
+		}
+
+		// Determine whether the array is associative or 0-based numeric
+		$numIndex = array_keys($this->fields) == range(0, count($this->fields) - 1);
+
 		$results = array();
 
 		if (!$first2cols && ($cols > 2 || $force_array)) {
@@ -3640,6 +3746,11 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 			}
 		}
 
+		if ($rowNumber < 0) {
+			$this->EOF = true;
+			return false;
+		}
+
 		if ($this->canSeek) {
 			if ($this->_seek($rowNumber)) {
 				$this->_currentRow = $rowNumber;
@@ -3690,29 +3801,55 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 	}
 
 	/**
+	 * Defines the function to use for table fields case conversion
+	 * depending on ADODB_ASSOC_CASE
+	 * @return string strtolower/strtoupper or false if no conversion needed
+	 */
+	protected function AssocCaseConvertFunction($case = ADODB_ASSOC_CASE) {
+		switch($case) {
+			case ADODB_ASSOC_CASE_UPPER:
+				return 'strtoupper';
+			case ADODB_ASSOC_CASE_LOWER:
+				return 'strtolower';
+			case ADODB_ASSOC_CASE_NATIVE:
+			default:
+				return false;
+		}
+	}
+
+	/**
 	 * Builds the bind array associating keys to recordset fields
 	 *
 	 * @param int $upper Case for the array keys, defaults to uppercase
 	 *                   (see ADODB_ASSOC_CASE_xxx constants)
 	 */
-	function GetAssocKeys($upper=ADODB_ASSOC_CASE_UPPER) {
+	function GetAssocKeys($upper = ADODB_ASSOC_CASE) {
+		if ($this->bind) {
+			return;
+		}
 		$this->bind = array();
+
+		// Define case conversion function for ASSOC fetch mode
+		$fn_change_case = $this->AssocCaseConvertFunction($upper);
+
+		// Build the bind array
 		for ($i=0; $i < $this->_numOfFields; $i++) {
 			$o = $this->FetchField($i);
-			switch($upper) {
-				case ADODB_ASSOC_CASE_LOWER:
-					$key = strtolower($o->name);
-					break;
-				case ADODB_ASSOC_CASE_UPPER:
-					$key = strtoupper($o->name);
-					break;
-				case ADODB_ASSOC_CASE_NATIVE:
-				default:
-					$key = $o->name;
-					break;
+
+			// Set the array's key
+			if(is_numeric($o->name)) {
+				// Just use the field ID
+				$key = $i;
 			}
-			$val = $this->fetchMode == ADODB_FETCH_ASSOC ? $o->name : $i;
-			$this->bind[$key] = $val;
+			elseif( $fn_change_case ) {
+				// Convert the key's case
+				$key = $fn_change_case($o->name);
+			}
+			else {
+				$key = $o->name;
+			}
+
+			$this->bind[$key] = $i;
 		}
 	}
 
@@ -3723,11 +3860,10 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 	 * @param int $upper Case for the array keys, defaults to uppercase
 	 *                   (see ADODB_ASSOC_CASE_xxx constants)
 	 */
-	function GetRowAssoc($upper=ADODB_ASSOC_CASE_UPPER) {
+	function GetRowAssoc($upper = ADODB_ASSOC_CASE) {
 		$record = array();
-		if (!$this->bind) {
-			$this->GetAssocKeys($upper);
-		}
+		$this->GetAssocKeys($upper);
+
 		foreach($this->bind as $k => $v) {
 			if( array_key_exists( $v, $this->fields ) ) {
 				$record[$k] = $this->fields[$v];
@@ -4021,6 +4157,7 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 			'TIME' => 'T',
 			'TIMESTAMP' => 'T',
 			'DATETIME' => 'T',
+			'DATETIME2' => 'T',
 			'TIMESTAMPTZ' => 'T',
 			'T' => 'T',
 			'TIMESTAMP WITHOUT TIME ZONE' => 'T', // postgresql
@@ -4128,6 +4265,34 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 		}
 	}
 
+	/**
+	 * Convert case of field names associative array, if needed
+	 * @return void
+	 */
+	protected function _updatefields()
+	{
+		if( empty($this->fields)) {
+			return;
+		}
+
+		// Determine case conversion function
+		$fn_change_case = $this->AssocCaseConvertFunction();
+		if(!$fn_change_case) {
+			// No conversion needed
+			return;
+		}
+
+		$arr = array();
+
+		// Change the case
+		foreach($this->fields as $k => $v) {
+			if (!is_integer($k)) {
+				$k = $fn_change_case($k);
+			}
+			$arr[$k] = $v;
+		}
+		$this->fields = $arr;
+	}
 
 	function _close() {}
 
@@ -4198,12 +4363,12 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 		/**
 		 * Constructor
 		 */
-		function ADORecordSet_array($fakeid=1) {
+		function __construct($fakeid=1) {
 			global $ADODB_FETCH_MODE,$ADODB_COMPAT_FETCH;
 
 			// fetch() on EOF does not delete $this->fields
 			$this->compat = !empty($ADODB_COMPAT_FETCH);
-			$this->ADORecordSet($fakeid); // fake queryID
+			parent::__construct($fakeid); // fake queryID
 			$this->fetchMode = $ADODB_FETCH_MODE;
 		}
 
@@ -4470,7 +4635,7 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 		global $ADODB_NEWCONNECTION, $ADODB_LASTDB;
 
 		if (!defined('ADODB_ASSOC_CASE')) {
-			define('ADODB_ASSOC_CASE',2);
+			define('ADODB_ASSOC_CASE', ADODB_ASSOC_CASE_NATIVE);
 		}
 		$errorfn = (defined('ADODB_ERROR_HANDLER')) ? ADODB_ERROR_HANDLER : false;
 		if (($at = strpos($db,'://')) !== FALSE) {
@@ -4787,3 +4952,5 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 		}
 		return _adodb_backtrace($printOrArr,$levels,0,$ishtml);
 	}
+
+}

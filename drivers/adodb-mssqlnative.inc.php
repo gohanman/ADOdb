@@ -1,6 +1,8 @@
 <?php
 /*
-V5.20dev  ??-???-2014  (c) 2000-2014 John Lim (jlim#natsoft.com). All rights reserved.
+@version   v5.21dev  ??-???-2015
+@copyright (c) 2000-2013 John Lim (jlim#natsoft.com). All rights reserved.
+@copyright (c) 2014      Damien Regad, Mark Newnham and the ADOdb community
   Released under both BSD license and Lesser GPL library license.
   Whenever there is any discrepancy between the two licenses,
   the BSD license will take precedence.
@@ -71,7 +73,7 @@ if (ADODB_PHPVER >= 0x4300) {
 // docs say 4.2.0, but testing shows only since 4.3.0 does it work!
 	ini_set('mssql.datetimeconvert',0);
 } else {
-    global $ADODB_mssql_mths;		// array, months must be upper-case
+	global $ADODB_mssql_mths;		// array, months must be upper-case
 	$ADODB_mssql_date_order = 'mdy';
 	$ADODB_mssql_mths = array(
 		'JAN'=>1,'FEB'=>2,'MAR'=>3,'APR'=>4,'MAY'=>5,'JUN'=>6,
@@ -126,19 +128,19 @@ class ADODB_mssqlnative extends ADOConnection {
 	var $sequences = false;
 	var $mssql_version = '';
 
-	function ADODB_mssqlnative()
+	function __construct()
 	{
 		if ($this->debug) {
 			ADOConnection::outp("<pre>");
 			sqlsrv_set_error_handling( SQLSRV_ERRORS_LOG_ALL );
 			sqlsrv_log_set_severity( SQLSRV_LOG_SEVERITY_ALL );
 			sqlsrv_log_set_subsystems(SQLSRV_LOG_SYSTEM_ALL);
-			sqlsrv_configure('warnings_return_as_errors', 0);
+			sqlsrv_configure('WarningsReturnAsErrors', 0);
 		} else {
 			sqlsrv_set_error_handling(0);
 			sqlsrv_log_set_severity(0);
 			sqlsrv_log_set_subsystems(SQLSRV_LOG_SYSTEM_ALL);
-			sqlsrv_configure('warnings_return_as_errors', 0);
+			sqlsrv_configure('WarningsReturnAsErrors', 0);
 		}
 	}
 	function ServerVersion() {
@@ -163,7 +165,7 @@ class ADODB_mssqlnative extends ADOConnection {
 	}
 
 	function ServerInfo() {
-    	global $ADODB_FETCH_MODE;
+		global $ADODB_FETCH_MODE;
 		static $arr = false;
 		if (is_array($arr))
 			return $arr;
@@ -480,6 +482,10 @@ class ADODB_mssqlnative extends ADOConnection {
 		$connectionInfo["Database"]=$argDatabasename;
 		$connectionInfo["UID"]=$argUsername;
 		$connectionInfo["PWD"]=$argPassword;
+
+		foreach ($this->connectionParameters as $parameter=>$value)
+			$connectionInfo[$parameter] = $value;
+
 		if ($this->debug) ADOConnection::outp("<hr>connecting... hostname: $argHostname params: ".var_export($connectionInfo,true));
 		//if ($this->debug) ADOConnection::outp("<hr>_connectionID before: ".serialize($this->_connectionID));
 		if(!($this->_connectionID = sqlsrv_connect($argHostname,$connectionInfo))) {
@@ -563,7 +569,7 @@ class ADODB_mssqlnative extends ADOConnection {
 
 		$insert = false;
 		// handle native driver flaw for retrieving the last insert ID
-		if(preg_match('/^\W*(insert [^;]+);?$/i', $sql)) {
+		if(preg_match('/^\W*insert\s(?:(?:(?:\'\')*\'[^\']+\'(?:\'\')*)|[^;\'])*;?$/i', $sql)) {
 			$insert = true;
 			$sql .= '; '.$this->identitySQL; // select scope_identity()
 		}
@@ -579,9 +585,10 @@ class ADODB_mssqlnative extends ADOConnection {
 			$rez = false;
 		} else if ($insert) {
 			// retrieve the last insert ID (where applicable)
-			sqlsrv_next_result($rez);
-			sqlsrv_fetch($rez);
-			$this->lastInsertID = sqlsrv_get_field($rez, 0);
+			while ( sqlsrv_next_result($rez) ) {
+				sqlsrv_fetch($rez);
+				$this->lastInsertID = sqlsrv_get_field($rez, 0);
+			}
 		}
 		return $rez;
 	}
@@ -589,8 +596,12 @@ class ADODB_mssqlnative extends ADOConnection {
 	// returns true or false
 	function _close()
 	{
-		if ($this->transCnt) $this->RollbackTrans();
-		$rez = @sqlsrv_close($this->_connectionID);
+		if ($this->transCnt) {
+			$this->RollbackTrans();
+		}
+		if($this->_connectionID) {
+			$rez = sqlsrv_close($this->_connectionID);
+		}
 		$this->_connectionID = false;
 		return $rez;
 	}
@@ -827,7 +838,7 @@ class ADODB_mssqlnative extends ADOConnection {
 }
 
 /*--------------------------------------------------------------------------------------
-	 Class Name: Recordset
+	Class Name: Recordset
 --------------------------------------------------------------------------------------*/
 
 class ADORecordset_mssqlnative extends ADORecordSet {
@@ -837,7 +848,7 @@ class ADORecordset_mssqlnative extends ADORecordSet {
 	var $fieldOffset = 0;
 	// _mths works only in non-localised system
 
-	function ADORecordset_mssqlnative($id,$mode=false)
+	function __construct($id,$mode=false)
 	{
 		if ($mode === false) {
 			global $ADODB_FETCH_MODE;
@@ -845,7 +856,7 @@ class ADORecordset_mssqlnative extends ADORecordSet {
 
 		}
 		$this->fetchMode = $mode;
-		return $this->ADORecordSet($id,$mode);
+		return parent::__construct($id,$mode);
 	}
 
 
@@ -1063,8 +1074,11 @@ class ADORecordset_mssqlnative extends ADORecordSet {
 		return $this->fields;
 	}
 
-	/*	close() only needs to be called if you are worried about using too much memory while your script
-		is running. All associated result memory for the specified result identifier will automatically be freed.	*/
+	/**
+	 * close() only needs to be called if you are worried about using too much
+	 * memory while your script is running. All associated result memory for
+	 * the specified result identifier will automatically be freed.
+	 */
 	function _close()
 	{
 		$rez = sqlsrv_free_stmt($this->_queryID);
@@ -1086,12 +1100,8 @@ class ADORecordset_mssqlnative extends ADORecordSet {
 
 
 class ADORecordSet_array_mssqlnative extends ADORecordSet_array {
-	function ADORecordSet_array_mssqlnative($id=-1,$mode=false)
-	{
-		$this->ADORecordSet_array($id,$mode);
-	}
 
-		// mssql uses a default date like Dec 30 2000 12:00AM
+	// mssql uses a default date like Dec 30 2000 12:00AM
 	static function UnixDate($v)
 	{
 
@@ -1131,8 +1141,8 @@ class ADORecordSet_array_mssqlnative extends ADORecordSet_array {
 		global $ADODB_mssql_mths,$ADODB_mssql_date_order;
 
 		//Dec 30 2000 12:00AM
-		 if ($ADODB_mssql_date_order == 'dmy') {
-			 if (!preg_match( "|^([0-9]{1,2})[-/\. ]+([A-Za-z]{3})[-/\. ]+([0-9]{4}) +([0-9]{1,2}):([0-9]{1,2}) *([apAP]{0,1})|"
+		if ($ADODB_mssql_date_order == 'dmy') {
+			if (!preg_match( "|^([0-9]{1,2})[-/\. ]+([A-Za-z]{3})[-/\. ]+([0-9]{4}) +([0-9]{1,2}):([0-9]{1,2}) *([apAP]{0,1})|"
 			,$v, $rr)) return parent::UnixTimeStamp($v);
 			if ($rr[3] <= TIMESTAMP_FIRST_YEAR) return 0;
 
