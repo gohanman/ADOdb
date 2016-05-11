@@ -1,7 +1,7 @@
 <?php
 /*
 
-  @version   v5.21dev  ??-???-2015
+  @version   v5.21.0-dev  ??-???-2016
   @copyright (c) 2000-2013 John Lim. All rights reserved.
   @copyright (c) 2014      Damien Regad, Mark Newnham and the ADOdb community
 
@@ -1739,7 +1739,8 @@ class ADORecordset_oci8 extends ADORecordSet {
 			oci_free_cursor($this->_refcursor);
 			$this->_refcursor = false;
 		}
-		@oci_free_statement($this->_queryID);
+		if (is_resource($this->_queryID))
+		   @oci_free_statement($this->_queryID);
 		$this->_queryID = false;
 	}
 
@@ -1796,7 +1797,7 @@ class ADORecordset_oci8 extends ADORecordSet {
 			return 'I';
 
 		default:
-			return 'N';
+			return ADODB_DEFAULT_METATYPE;
 		}
 	}
 }

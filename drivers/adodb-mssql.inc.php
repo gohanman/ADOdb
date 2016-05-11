@@ -1,6 +1,6 @@
 <?php
 /*
-@version   v5.21dev  ??-???-2015
+@version   v5.21.0-dev  ??-???-2016
 @copyright (c) 2000-2013 John Lim (jlim#natsoft.com). All rights reserved.
 @copyright (c) 2014      Damien Regad, Mark Newnham and the ADOdb community
   Released under both BSD license and Lesser GPL library license.
@@ -863,6 +863,32 @@ order by constraint_name, referenced_table_name, keyno";
 	{
 		return ADORecordSet_array_mssql::UnixTimeStamp($v);
 	}
+
+	/**
+	* Returns a substring of a varchar type field
+	*
+	* The SQL server version varies because the length is mandatory, so
+	* we append a reasonable string length
+	*
+	* @param	string	$fld	The field to sub-string
+	* @param	int		$start	The start point
+	* @param	int		$length	An optional length
+	*
+	* @return	The SQL text
+	*/
+	function substr($fld,$start,$length=0)
+	{
+		if ($length == 0)
+			/*
+		     * The length available to varchar is 2GB, but that makes no
+			 * sense in a substring, so I'm going to arbitrarily limit
+			 * the length to 1K, but you could change it if you want
+			 */
+			$length = 1024;
+
+		$text = "SUBSTRING($fld,$start,$length)";
+		return $text;
+	}
 }
 
 /*--------------------------------------------------------------------------------------
@@ -1060,10 +1086,14 @@ class ADORecordset_mssql extends ADORecordSet {
 
 	function _close()
 	{
-		$rez = mssql_free_result($this->_queryID);
-		$this->_queryID = false;
-		return $rez;
+		if($this->_queryID) {
+			$rez = mssql_free_result($this->_queryID);
+			$this->_queryID = false;
+			return $rez;
+		}
+		return true;
 	}
+
 	// mssql uses a default date like Dec 30 2000 12:00AM
 	static function UnixDate($v)
 	{
@@ -1073,6 +1103,30 @@ class ADORecordset_mssql extends ADORecordSet {
 	static function UnixTimeStamp($v)
 	{
 		return ADORecordSet_array_mssql::UnixTimeStamp($v);
+	}
+
+	/**
+	* Returns the maximum size of a MetaType C field. Because of the
+	* database design, SQL Server places no limits on the size of data inserted
+	* Although the actual limit is 2^31-1 bytes.
+	*
+	* @return int
+	*/
+	function charMax()
+	{
+		return ADODB_STRINGMAX_NOLIMIT;
+	}
+
+	/**
+	* Returns the maximum size of a MetaType X field. Because of the
+	* database design, SQL Server places no limits on the size of data inserted
+	* Although the actual limit is 2^31-1 bytes.
+	*
+	* @return int
+	*/
+	function textMax()
+	{
+		return ADODB_STRINGMAX_NOLIMIT;
 	}
 
 }
