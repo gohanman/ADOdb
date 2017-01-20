@@ -16,6 +16,8 @@ Set tabs to 4 for best viewing.
 
 */
 
+namespace ADOdb\drivers\Connections;
+use \ADOConnection;
 
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
@@ -73,7 +75,7 @@ global $ADODB_mssql_date_order;
 	}
 }
 
-class ADODB_mssql extends ADOConnection {
+class Mssql extends ADOConnection {
 	var $databaseType = "mssql";
 	var $dataProvider = "mssql";
 	var $replaceQuote = "''"; // string to use to replace quotes
@@ -96,7 +98,7 @@ class ADODB_mssql extends ADOConnection {
 	var $sysTimeStamp = 'GetDate()';
 	var $_has_mssql_init;
 	var $maxParameterLen = 4000;
-	var $arrayClass = 'ADORecordSet_array_mssql';
+	var $arrayClass = 'ADOdb\\drivers\\RecordSets\\MssqlArray';
 	var $uniqueSort = true;
 	var $leftOuter = '*=';
 	var $rightOuter = '=*';
@@ -858,12 +860,12 @@ order by constraint_name, referenced_table_name, keyno";
 	// mssql uses a default date like Dec 30 2000 12:00AM
 	static function UnixDate($v)
 	{
-		return ADORecordSet_array_mssql::UnixDate($v);
+		return MssqlArray::UnixDate($v);
 	}
 
 	static function UnixTimeStamp($v)
 	{
-		return ADORecordSet_array_mssql::UnixTimeStamp($v);
+		return MssqlArray::UnixTimeStamp($v);
 	}
 
 	/**
@@ -893,343 +895,4 @@ order by constraint_name, referenced_table_name, keyno";
 	}
 }
 
-/*--------------------------------------------------------------------------------------
-	Class Name: Recordset
---------------------------------------------------------------------------------------*/
 
-class ADORecordset_mssql extends ADORecordSet {
-
-	var $databaseType = "mssql";
-	var $canSeek = true;
-	var $hasFetchAssoc; // see http://phplens.com/lens/lensforum/msgs.php?id=6083
-	// _mths works only in non-localised system
-
-	function __construct($id,$mode=false)
-	{
-		// freedts check...
-		$this->hasFetchAssoc = function_exists('mssql_fetch_assoc');
-
-		if ($mode === false) {
-			global $ADODB_FETCH_MODE;
-			$mode = $ADODB_FETCH_MODE;
-
-		}
-		$this->fetchMode = $mode;
-		return parent::__construct($id,$mode);
-	}
-
-
-	function _initrs()
-	{
-	GLOBAL $ADODB_COUNTRECS;
-		$this->_numOfRows = ($ADODB_COUNTRECS)? @mssql_num_rows($this->_queryID):-1;
-		$this->_numOfFields = @mssql_num_fields($this->_queryID);
-	}
-
-
-	//Contributed by "Sven Axelsson" <sven.axelsson@bokochwebb.se>
-	// get next resultset - requires PHP 4.0.5 or later
-	function NextRecordSet()
-	{
-		if (!mssql_next_result($this->_queryID)) return false;
-		$this->_inited = false;
-		$this->bind = false;
-		$this->_currentRow = -1;
-		$this->Init();
-		return true;
-	}
-
-	/* Use associative array to get fields array */
-	function Fields($colname)
-	{
-		if ($this->fetchMode != ADODB_FETCH_NUM) return $this->fields[$colname];
-		if (!$this->bind) {
-			$this->bind = array();
-			for ($i=0; $i < $this->_numOfFields; $i++) {
-				$o = $this->FetchField($i);
-				$this->bind[strtoupper($o->name)] = $i;
-			}
-		}
-
-		return $this->fields[$this->bind[strtoupper($colname)]];
-	}
-
-	/*	Returns: an object containing field information.
-		Get column information in the Recordset object. fetchField() can be used in order to obtain information about
-		fields in a certain query result. If the field offset isn't specified, the next field that wasn't yet retrieved by
-		fetchField() is retrieved.	*/
-
-	function FetchField($fieldOffset = -1)
-	{
-		if ($fieldOffset != -1) {
-			$f = @mssql_fetch_field($this->_queryID, $fieldOffset);
-		}
-		else if ($fieldOffset == -1) {	/*	The $fieldOffset argument is not provided thus its -1 	*/
-			$f = @mssql_fetch_field($this->_queryID);
-		}
-		$false = false;
-		if (empty($f)) return $false;
-		return $f;
-	}
-
-	function _seek($row)
-	{
-		return @mssql_data_seek($this->_queryID, $row);
-	}
-
-	// speedup
-	function MoveNext()
-	{
-		if ($this->EOF) return false;
-
-		$this->_currentRow++;
-
-		if ($this->fetchMode & ADODB_FETCH_ASSOC) {
-			if ($this->fetchMode & ADODB_FETCH_NUM) {
-				//ADODB_FETCH_BOTH mode
-				$this->fields = @mssql_fetch_array($this->_queryID);
-			}
-			else {
-				if ($this->hasFetchAssoc) {// only for PHP 4.2.0 or later
-					$this->fields = @mssql_fetch_assoc($this->_queryID);
-				} else {
-					$flds = @mssql_fetch_array($this->_queryID);
-					if (is_array($flds)) {
-						$fassoc = array();
-						foreach($flds as $k => $v) {
-							if (is_numeric($k)) continue;
-							$fassoc[$k] = $v;
-						}
-						$this->fields = $fassoc;
-					} else
-						$this->fields = false;
-				}
-			}
-
-			if (is_array($this->fields)) {
-				if (ADODB_ASSOC_CASE == 0) {
-					foreach($this->fields as $k=>$v) {
-						$kn = strtolower($k);
-						if ($kn <> $k) {
-							unset($this->fields[$k]);
-							$this->fields[$kn] = $v;
-						}
-					}
-				} else if (ADODB_ASSOC_CASE == 1) {
-					foreach($this->fields as $k=>$v) {
-						$kn = strtoupper($k);
-						if ($kn <> $k) {
-							unset($this->fields[$k]);
-							$this->fields[$kn] = $v;
-						}
-					}
-				}
-			}
-		} else {
-			$this->fields = @mssql_fetch_row($this->_queryID);
-		}
-		if ($this->fields) return true;
-		$this->EOF = true;
-
-		return false;
-	}
-
-
-	// INSERT UPDATE DELETE returns false even if no error occurs in 4.0.4
-	// also the date format has been changed from YYYY-mm-dd to dd MMM YYYY in 4.0.4. Idiot!
-	function _fetch($ignore_fields=false)
-	{
-		if ($this->fetchMode & ADODB_FETCH_ASSOC) {
-			if ($this->fetchMode & ADODB_FETCH_NUM) {
-				//ADODB_FETCH_BOTH mode
-				$this->fields = @mssql_fetch_array($this->_queryID);
-			} else {
-				if ($this->hasFetchAssoc) // only for PHP 4.2.0 or later
-					$this->fields = @mssql_fetch_assoc($this->_queryID);
-				else {
-					$this->fields = @mssql_fetch_array($this->_queryID);
-					if (@is_array($$this->fields)) {
-						$fassoc = array();
-						foreach($$this->fields as $k => $v) {
-							if (is_integer($k)) continue;
-							$fassoc[$k] = $v;
-						}
-						$this->fields = $fassoc;
-					}
-				}
-			}
-
-			if (!$this->fields) {
-			} else if (ADODB_ASSOC_CASE == 0) {
-				foreach($this->fields as $k=>$v) {
-					$kn = strtolower($k);
-					if ($kn <> $k) {
-						unset($this->fields[$k]);
-						$this->fields[$kn] = $v;
-					}
-				}
-			} else if (ADODB_ASSOC_CASE == 1) {
-				foreach($this->fields as $k=>$v) {
-					$kn = strtoupper($k);
-					if ($kn <> $k) {
-						unset($this->fields[$k]);
-						$this->fields[$kn] = $v;
-					}
-				}
-			}
-		} else {
-			$this->fields = @mssql_fetch_row($this->_queryID);
-		}
-		return $this->fields;
-	}
-
-	/*	close() only needs to be called if you are worried about using too much memory while your script
-		is running. All associated result memory for the specified result identifier will automatically be freed.	*/
-
-	function _close()
-	{
-		if($this->_queryID) {
-			$rez = mssql_free_result($this->_queryID);
-			$this->_queryID = false;
-			return $rez;
-		}
-		return true;
-	}
-
-	// mssql uses a default date like Dec 30 2000 12:00AM
-	static function UnixDate($v)
-	{
-		return ADORecordSet_array_mssql::UnixDate($v);
-	}
-
-	static function UnixTimeStamp($v)
-	{
-		return ADORecordSet_array_mssql::UnixTimeStamp($v);
-	}
-
-	/**
-	* Returns the maximum size of a MetaType C field. Because of the
-	* database design, SQL Server places no limits on the size of data inserted
-	* Although the actual limit is 2^31-1 bytes.
-	*
-	* @return int
-	*/
-	function charMax()
-	{
-		return ADODB_STRINGMAX_NOLIMIT;
-	}
-
-	/**
-	* Returns the maximum size of a MetaType X field. Because of the
-	* database design, SQL Server places no limits on the size of data inserted
-	* Although the actual limit is 2^31-1 bytes.
-	*
-	* @return int
-	*/
-	function textMax()
-	{
-		return ADODB_STRINGMAX_NOLIMIT;
-	}
-
-}
-
-
-class ADORecordSet_array_mssql extends ADORecordSet_array {
-
-	// mssql uses a default date like Dec 30 2000 12:00AM
-	static function UnixDate($v)
-	{
-
-		if (is_numeric(substr($v,0,1)) && ADODB_PHPVER >= 0x4200) return parent::UnixDate($v);
-
-	global $ADODB_mssql_mths,$ADODB_mssql_date_order;
-
-		//Dec 30 2000 12:00AM
-		if ($ADODB_mssql_date_order == 'dmy') {
-			if (!preg_match( "|^([0-9]{1,2})[-/\. ]+([A-Za-z]{3})[-/\. ]+([0-9]{4})|" ,$v, $rr)) {
-				return parent::UnixDate($v);
-			}
-			if ($rr[3] <= TIMESTAMP_FIRST_YEAR) return 0;
-
-			$theday = $rr[1];
-			$themth =  substr(strtoupper($rr[2]),0,3);
-		} else {
-			if (!preg_match( "|^([A-Za-z]{3})[-/\. ]+([0-9]{1,2})[-/\. ]+([0-9]{4})|" ,$v, $rr)) {
-				return parent::UnixDate($v);
-			}
-			if ($rr[3] <= TIMESTAMP_FIRST_YEAR) return 0;
-
-			$theday = $rr[2];
-			$themth = substr(strtoupper($rr[1]),0,3);
-		}
-		$themth = $ADODB_mssql_mths[$themth];
-		if ($themth <= 0) return false;
-		// h-m-s-MM-DD-YY
-		return  mktime(0,0,0,$themth,$theday,$rr[3]);
-	}
-
-	static function UnixTimeStamp($v)
-	{
-
-		if (is_numeric(substr($v,0,1)) && ADODB_PHPVER >= 0x4200) return parent::UnixTimeStamp($v);
-
-	global $ADODB_mssql_mths,$ADODB_mssql_date_order;
-
-		//Dec 30 2000 12:00AM
-		if ($ADODB_mssql_date_order == 'dmy') {
-			if (!preg_match( "|^([0-9]{1,2})[-/\. ]+([A-Za-z]{3})[-/\. ]+([0-9]{4}) +([0-9]{1,2}):([0-9]{1,2}) *([apAP]{0,1})|"
-			,$v, $rr)) return parent::UnixTimeStamp($v);
-			if ($rr[3] <= TIMESTAMP_FIRST_YEAR) return 0;
-
-			$theday = $rr[1];
-			$themth =  substr(strtoupper($rr[2]),0,3);
-		} else {
-			if (!preg_match( "|^([A-Za-z]{3})[-/\. ]+([0-9]{1,2})[-/\. ]+([0-9]{4}) +([0-9]{1,2}):([0-9]{1,2}) *([apAP]{0,1})|"
-			,$v, $rr)) return parent::UnixTimeStamp($v);
-			if ($rr[3] <= TIMESTAMP_FIRST_YEAR) return 0;
-
-			$theday = $rr[2];
-			$themth = substr(strtoupper($rr[1]),0,3);
-		}
-
-		$themth = $ADODB_mssql_mths[$themth];
-		if ($themth <= 0) return false;
-
-		switch (strtoupper($rr[6])) {
-		case 'P':
-			if ($rr[4]<12) $rr[4] += 12;
-			break;
-		case 'A':
-			if ($rr[4]==12) $rr[4] = 0;
-			break;
-		default:
-			break;
-		}
-		// h-m-s-MM-DD-YY
-		return  mktime($rr[4],$rr[5],0,$themth,$theday,$rr[3]);
-	}
-}
-
-/*
-Code Example 1:
-
-select	object_name(constid) as constraint_name,
-		object_name(fkeyid) as table_name,
-		col_name(fkeyid, fkey) as column_name,
-	object_name(rkeyid) as referenced_table_name,
-	col_name(rkeyid, rkey) as referenced_column_name
-from sysforeignkeys
-where object_name(fkeyid) = x
-order by constraint_name, table_name, referenced_table_name,  keyno
-
-Code Example 2:
-select 	constraint_name,
-	column_name,
-	ordinal_position
-from information_schema.key_column_usage
-where constraint_catalog = db_name()
-and table_name = x
-order by constraint_name, ordinal_position
-
-http://www.databasejournal.com/scripts/article.php/1440551
-*/

@@ -15,6 +15,9 @@
 *
 */
 
+namespace ADOdb\drivers\Connections;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
@@ -24,9 +27,7 @@ if (!defined('ADODB_DIR')) die();
 	the more standard || string concatenation operator.
 */
 
-include_once(ADODB_DIR.'/drivers/adodb-mssql.inc.php');
-
-class ADODB_mssqlpo extends ADODB_mssql {
+class MssqlPo extends Mssql {
 	var $databaseType = "mssqlpo";
 	var $concat_operator = '||';
 
@@ -45,10 +46,7 @@ class ADODB_mssqlpo extends ADODB_mssql {
 	function _query($sql,$inputarr=false)
 	{
 		if (is_string($sql)) $sql = str_replace('||','+',$sql);
-		return ADODB_mssql::_query($sql,$inputarr);
+		return Mssql::_query($sql,$inputarr);
 	}
 }
 
-class ADORecordset_mssqlpo extends ADORecordset_mssql {
-	var $databaseType = "mssqlpo";
-}

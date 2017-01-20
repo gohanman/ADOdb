@@ -17,6 +17,9 @@
 	  http://support.microsoft.com/default.aspx?scid=kb;en-us;260694
 */
 
+namespace ADOdb\drivers\Connections;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
@@ -25,7 +28,7 @@ if (! defined("_ADODB_CSV_LAYER")) {
 
 include_once(ADODB_DIR.'/adodb-csvlib.inc.php');
 
-class ADODB_csv extends ADOConnection {
+class CSV extends ADOConnection {
 	var $databaseType = 'csv';
 	var $databaseProvider = 'csv';
 	var $hasInsertID = true;
@@ -188,12 +191,5 @@ class ADODB_csv extends ADOConnection {
 	}
 } // class
 
-class ADORecordset_csv extends ADORecordset {
-
-	function _close()
-	{
-		return true;
-	}
-}
-
 } // define
+

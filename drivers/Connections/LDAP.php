@@ -16,6 +16,9 @@
   Joshua Eldridge (joshuae74#hotmail.com)
 */
 
+namespace ADOdb\drivers\Connections;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
@@ -25,7 +28,7 @@ if (!defined('LDAP_ASSOC')) {
 	define('LDAP_BOTH',ADODB_FETCH_BOTH);
 }
 
-class ADODB_ldap extends ADOConnection {
+class LDAP extends ADOConnection {
 	var $databaseType = 'ldap';
 	var $dataProvider = 'ldap';
 
@@ -280,145 +283,3 @@ class ADODB_ldap extends ADOConnection {
 	}
 }
 
-/*--------------------------------------------------------------------------------------
-	Class Name: Recordset
---------------------------------------------------------------------------------------*/
-
-class ADORecordSet_ldap extends ADORecordSet{
-
-	var $databaseType = "ldap";
-	var $canSeek = false;
-	var $_entryID; /* keeps track of the entry resource identifier */
-
-	function __construct($queryID,$mode=false)
-	{
-		if ($mode === false) {
-			global $ADODB_FETCH_MODE;
-			$mode = $ADODB_FETCH_MODE;
-		}
-		switch ($mode)
-		{
-		case ADODB_FETCH_NUM:
-			$this->fetchMode = LDAP_NUM;
-			break;
-		case ADODB_FETCH_ASSOC:
-			$this->fetchMode = LDAP_ASSOC;
-			break;
-		case ADODB_FETCH_DEFAULT:
-		case ADODB_FETCH_BOTH:
-		default:
-			$this->fetchMode = LDAP_BOTH;
-			break;
-		}
-
-		parent::__construct($queryID);
-	}
-
-	function _initrs()
-	{
-		/*
-		This could be teaked to respect the $COUNTRECS directive from ADODB
-		It's currently being used in the _fetch() function and the
-		GetAssoc() function
-		*/
-		$this->_numOfRows = ldap_count_entries( $this->connection->_connectionID, $this->_queryID );
-	}
-
-	/*
-	Return whole recordset as a multi-dimensional associative array
-	*/
-	function GetAssoc($force_array = false, $first2cols = false, $fetchMode = -1)
-	{
-		$records = $this->_numOfRows;
-		$results = array();
-		for ( $i=0; $i < $records; $i++ ) {
-			foreach ( $this->fields as $k=>$v ) {
-				if ( is_array( $v ) ) {
-					if ( $v['count'] == 1 ) {
-						$results[$i][$k] = $v[0];
-					} else {
-						array_shift( $v );
-						$results[$i][$k] = $v;
-					}
-				}
-			}
-		}
-
-		return $results;
-	}
-
-	function GetRowAssoc($upper = ADODB_ASSOC_CASE)
-	{
-		$results = array();
-		foreach ( $this->fields as $k=>$v ) {
-			if ( is_array( $v ) ) {
-				if ( $v['count'] == 1 ) {
-					$results[$k] = $v[0];
-				} else {
-					array_shift( $v );
-					$results[$k] = $v;
-				}
-			}
-		}
-
-		return $results;
-	}
-
-	function GetRowNums()
-	{
-		$results = array();
-		foreach ( $this->fields as $k=>$v ) {
-			static $i = 0;
-			if (is_array( $v )) {
-				if ( $v['count'] == 1 ) {
-					$results[$i] = $v[0];
-				} else {
-					array_shift( $v );
-					$results[$i] = $v;
-				}
-				$i++;
-			}
-		}
-		return $results;
-	}
-
-	function _fetch()
-	{
-		if ( $this->_currentRow >= $this->_numOfRows && $this->_numOfRows >= 0 ) {
-			return false;
-		}
-
-		if ( $this->_currentRow == 0 ) {
-			$this->_entryID = ldap_first_entry( $this->connection->_connectionID, $this->_queryID );
-		} else {
-			$this->_entryID = ldap_next_entry( $this->connection->_connectionID, $this->_entryID );
-		}
-
-		$this->fields = ldap_get_attributes( $this->connection->_connectionID, $this->_entryID );
-		$this->_numOfFields = $this->fields['count'];
-
-		switch ( $this->fetchMode ) {
-
-			case LDAP_ASSOC:
-				$this->fields = $this->GetRowAssoc();
-				break;
-
-			case LDAP_NUM:
-				$this->fields = array_merge($this->GetRowNums(),$this->GetRowAssoc());
-				break;
-
-			case LDAP_BOTH:
-			default:
-				$this->fields = $this->GetRowNums();
-				break;
-		}
-
-		return is_array( $this->fields );
-	}
-
-	function _close() {
-		@ldap_free_result( $this->_queryID );
-		$this->_queryID = false;
-	}
-
-}

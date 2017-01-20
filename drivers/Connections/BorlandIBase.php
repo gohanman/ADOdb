@@ -14,12 +14,12 @@ Set tabs to 4 for best viewing.
 
 */
 
+namespace ADOdb\drivers\Connections;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-include_once(ADODB_DIR."/drivers/adodb-ibase.inc.php");
-
-class ADODB_borland_ibase extends ADODB_ibase {
+class BorlandIBase extends IBase {
 	var $databaseType = "borland_ibase";
 
 	function BeginTrans()
@@ -75,9 +75,3 @@ class ADODB_borland_ibase extends ADODB_ibase {
 
 };
 
-
-class  ADORecordSet_borland_ibase extends ADORecordSet_ibase {
-
-	var $databaseType = "borland_ibase";
-
-}

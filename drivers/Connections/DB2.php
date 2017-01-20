@@ -17,6 +17,9 @@
   of this code to point out any other things that can be removed.
 */
 
+namespace ADOdb\drivers\Connections;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
@@ -25,11 +28,7 @@ if (!defined('ADODB_DIR')) die();
 /*--------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------*/
 
-
-
-
-
-class ADODB_db2 extends ADOConnection {
+class DB2 extends ADOConnection {
 	var $databaseType = "db2";
 	var $fmtDate = "'Y-m-d'";
 	var $concat_operator = '||';
@@ -717,133 +716,3 @@ See http://msdn.microsoft.com/library/default.asp?url=/library/en-us/db2/htm/db2
 
 }
 
-/*--------------------------------------------------------------------------------------
-	 Class Name: Recordset
---------------------------------------------------------------------------------------*/
-
-class ADORecordSet_db2 extends ADORecordSet {
-
-	var $bind = false;
-	var $databaseType = "db2";
-	var $dataProvider = "db2";
-	var $useFetchArray;
-
-	function __construct($id,$mode=false)
-	{
-		if ($mode === false) {
-			global $ADODB_FETCH_MODE;
-			$mode = $ADODB_FETCH_MODE;
-		}
-		$this->fetchMode = $mode;
-
-		$this->_queryID = $id;
-	}
-
-
-	// returns the field object
-	function FetchField($offset = -1)
-	{
-		$o= new ADOFieldObject();
-		$o->name = @db2_field_name($this->_queryID,$offset);
-		$o->type = @db2_field_type($this->_queryID,$offset);
-		$o->max_length = db2_field_width($this->_queryID,$offset);
-		if (ADODB_ASSOC_CASE == 0) $o->name = strtolower($o->name);
-		else if (ADODB_ASSOC_CASE == 1) $o->name = strtoupper($o->name);
-		return $o;
-	}
-
-	/* Use associative array to get fields array */
-	function Fields($colname)
-	{
-		if ($this->fetchMode & ADODB_FETCH_ASSOC) return $this->fields[$colname];
-		if (!$this->bind) {
-			$this->bind = array();
-			for ($i=0; $i < $this->_numOfFields; $i++) {
-				$o = $this->FetchField($i);
-				$this->bind[strtoupper($o->name)] = $i;
-			}
-		}
-
-		 return $this->fields[$this->bind[strtoupper($colname)]];
-	}
-
-
-	function _initrs()
-	{
-	global $ADODB_COUNTRECS;
-		$this->_numOfRows = ($ADODB_COUNTRECS) ? @db2_num_rows($this->_queryID) : -1;
-		$this->_numOfFields = @db2_num_fields($this->_queryID);
-		// some silly drivers such as db2 as/400 and intersystems cache return _numOfRows = 0
-		if ($this->_numOfRows == 0) $this->_numOfRows = -1;
-	}
-
-	function _seek($row)
-	{
-		return false;
-	}
-
-	// speed up SelectLimit() by switching to ADODB_FETCH_NUM as ADODB_FETCH_ASSOC is emulated
-	function GetArrayLimit($nrows,$offset=-1)
-	{
-		if ($offset <= 0) {
-			$rs = $this->GetArray($nrows);
-			return $rs;
-		}
-		$savem = $this->fetchMode;
-		$this->fetchMode = ADODB_FETCH_NUM;
-		$this->Move($offset);
-		$this->fetchMode = $savem;
-
-		if ($this->fetchMode & ADODB_FETCH_ASSOC) {
-			$this->fields = $this->GetRowAssoc();
-		}
-
-		$results = array();
-		$cnt = 0;
-		while (!$this->EOF && $nrows != $cnt) {
-			$results[$cnt++] = $this->fields;
-			$this->MoveNext();
-		}
-
-		return $results;
-	}
-
-
-	function MoveNext()
-	{
-		if ($this->_numOfRows != 0 && !$this->EOF) {
-			$this->_currentRow++;
-
-			$this->fields = @db2_fetch_array($this->_queryID);
-			if ($this->fields) {
-				if ($this->fetchMode & ADODB_FETCH_ASSOC) {
-					$this->fields = $this->GetRowAssoc();
-				}
-				return true;
-			}
-		}
-		$this->fields = false;
-		$this->EOF = true;
-		return false;
-	}
-
-	function _fetch()
-	{
-
-		$this->fields = db2_fetch_array($this->_queryID);
-		if ($this->fields) {
-			if ($this->fetchMode & ADODB_FETCH_ASSOC) {
-				$this->fields = $this->GetRowAssoc();
-			}
-			return true;
-		}
-		$this->fields = false;
-		return false;
-	}
-
-	function _close()
-	{
-		return @db2_free_result($this->_queryID);
-	}
-
-}

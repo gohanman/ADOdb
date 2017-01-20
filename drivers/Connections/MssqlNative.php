@@ -20,6 +20,9 @@ Set tabs to 4 for best viewing.
 
 */
 
+namespace ADOdb\drivers\Connections;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
@@ -42,7 +45,6 @@ if (!function_exists('sqlsrv_log_set_subsystems')) {
 		sqlsrv_configure("LogSubsystems", $constant);
 	}
 }
-
 
 //----------------------------------------------------------------
 // MSSQL returns dates with the format Oct 13 2002 or 13 Oct 2002
@@ -80,7 +82,7 @@ if (ADODB_PHPVER >= 0x4300) {
 		'JUL'=>7,'AUG'=>8,'SEP'=>9,'OCT'=>10,'NOV'=>11,'DEC'=>12);
 }
 
-class ADODB_mssqlnative extends ADOConnection {
+class MssqlNative extends ADOConnection {
 	var $databaseType = "mssqlnative";
 	var $dataProvider = "mssqlnative";
 	var $replaceQuote = "''"; // string to use to replace quotes
@@ -115,7 +117,7 @@ class ADODB_mssqlnative extends ADOConnection {
 	var $sysDate = 'convert(datetime,convert(char,GetDate(),102),102)';
 	var $sysTimeStamp = 'GetDate()';
 	var $maxParameterLen = 4000;
-	var $arrayClass = 'ADORecordSet_array_mssqlnative';
+	var $arrayClass = 'ADOdb\\drivers\\RecordSets\\MssqlNativeArray';
 	var $uniqueSort = true;
 	var $leftOuter = '*=';
 	var $rightOuter = '=*';
@@ -602,12 +604,12 @@ class ADODB_mssqlnative extends ADOConnection {
 	// mssql uses a default date like Dec 30 2000 12:00AM
 	static function UnixDate($v)
 	{
-		return ADORecordSet_array_mssqlnative::UnixDate($v);
+		return MssqlNativeArray::UnixDate($v);
 	}
 
 	static function UnixTimeStamp($v)
 	{
-		return ADORecordSet_array_mssqlnative::UnixTimeStamp($v);
+		return MssqlNativeArray::UnixTimeStamp($v);
 	}
 
 	function MetaIndexes($table,$primary=false, $owner = false)
@@ -877,388 +879,3 @@ class ADODB_mssqlnative extends ADOConnection {
 	}
 }
 
-/*--------------------------------------------------------------------------------------
-	Class Name: Recordset
---------------------------------------------------------------------------------------*/
-
-class ADORecordset_mssqlnative extends ADORecordSet {
-
-	var $databaseType = "mssqlnative";
-	var $canSeek = false;
-	var $fieldOffset = 0;
-	// _mths works only in non-localised system
-
-	/*
-	 * Holds a cached version of the metadata
-	 */
-	private $fieldObjects = false;
-
-	/*
-	 * Flags if we have retrieved the metadata
-	 */
-	private $fieldObjectsRetrieved = false;
-
-	/*
-	* Cross-reference the objects by name for easy access
-	*/
-	private $fieldObjectsIndex = array();
-
-
-	/*
-	 * Cross references the dateTime objects for faster decoding
-	 */
-	private $dateTimeObjects = array();
-
-	/*
-	 * flags that we have dateTimeObjects to handle
-	 */
-	private $hasDateTimeObjects = false;
-
-	/*
-	 * This is cross reference between how the types are stored
-	 * in SQL Server and their english-language description
-	 */
-	private $_typeConversion = array(
-			-155 => 'datetimeoffset',
-			-154 => 'time',
-			-152 => 'xml',
-			-151 => 'udt',
-			-11  => 'uniqueidentifier',
-			-10  => 'ntext',
-			-9   => 'nvarchar',
-			-8   => 'nchar',
-			-7   => 'bit',
-			-6   => 'tinyint',
-			-5   => 'bigint',
-			-4   => 'image',
-			-3   => 'varbinary',
-			-2   => 'timestamp',
-			-1   => 'text',
-			 1   => 'char',
-			 2   => 'numeric',
-			 3   => 'decimal',
-			 4   => 'int',
-			 5   => 'smallint',
-			 6   => 'float',
-			 7   => 'real',
-			 12  => 'varchar',
-			 91  => 'date',
-			 93  => 'datetime'
-			);
-
-
-
-
-	function __construct($id,$mode=false)
-	{
-		if ($mode === false) {
-			global $ADODB_FETCH_MODE;
-			$mode = $ADODB_FETCH_MODE;
-
-		}
-		$this->fetchMode = $mode;
-		return parent::__construct($id,$mode);
-	}
-
-
-	function _initrs()
-	{
-		$this->_numOfRows = -1;//not supported
-		$fieldmeta = sqlsrv_field_metadata($this->_queryID);
-		$this->_numOfFields = ($fieldmeta)? count($fieldmeta):-1;
-		/*
-		* Cache the metadata right now
-		 */
-		$this->_fetchField();
-
-	}
-
-
-	//Contributed by "Sven Axelsson" <sven.axelsson@bokochwebb.se>
-	// get next resultset - requires PHP 4.0.5 or later
-	function NextRecordSet()
-	{
-		if (!sqlsrv_next_result($this->_queryID)) return false;
-		$this->_inited = false;
-		$this->bind = false;
-		$this->_currentRow = -1;
-		$this->Init();
-		return true;
-	}
-
-	/* Use associative array to get fields array */
-	function Fields($colname)
-	{
-		if ($this->fetchMode != ADODB_FETCH_NUM) return $this->fields[$colname];
-		if (!$this->bind) {
-			$this->bind = array();
-			for ($i=0; $i < $this->_numOfFields; $i++) {
-				$o = $this->FetchField($i);
-				$this->bind[strtoupper($o->name)] = $i;
-			}
-		}
-
-		return $this->fields[$this->bind[strtoupper($colname)]];
-	}
-
-	/**
-	* Returns: an object containing field information.
-	*
-	* Get column information in the Recordset object. fetchField()
-	* can be used in order to obtain information about fields in a
-	* certain query result. If the field offset isn't specified,
-	* the next field that wasn't yet retrieved by fetchField()
-	* is retrieved.
-	*
-	* $param int $fieldOffset (optional default=-1 for all
-	* @return mixed an ADOFieldObject, or array of objects
-	*/
-	private function _fetchField($fieldOffset = -1)
-	{
-		if ($this->fieldObjectsRetrieved){
-			if ($this->fieldObjects) {
-				/*
-				 * Already got the information
-				 */
-				if ($fieldOffset == -1)
-					return $this->fieldObjects;
-				else
-					return $this->fieldObjects[$fieldOffset];
-			}
-			else
-				/*
-			     * No metadata available
-				 */
-				return false;
-		}
-
-		$this->fieldObjectsRetrieved = true;
-		/*
-		 * Retrieve all metadata in one go. This is always returned as a
-		 * numeric array.
-		 */
-		$fieldMetaData = sqlsrv_field_metadata($this->_queryID);
-
-		if (!$fieldMetaData)
-			/*
-		     * Not a statement that gives us metaData
-			 */
-			return false;
-
-		$this->_numOfFields = count($fieldMetaData);
-		foreach ($fieldMetaData as $key=>$value)
-		{
-
-			$fld = new ADOFieldObject;
-			/*
-			 * Caution - keys are case-sensitive, must respect
-			 * casing of values
-			 */
-
-			$fld->name          = $value['Name'];
-			$fld->max_length    = $value['Size'];
-			$fld->column_source = $value['Name'];
-			$fld->type          = $this->_typeConversion[$value['Type']];
-
-			$this->fieldObjects[$key] = $fld;
-
-			$this->fieldObjectsIndex[$fld->name] = $key;
-
-		}
-		if ($fieldOffset == -1)
-			return $this->fieldObjects;
-
-		return $this->fieldObjects[$fieldOffset];
-	}
-
-	/*
-	 * Fetchfield copies the oracle method, it loads the field information
-	 * into the _fieldobjs array once, to save multiple calls to the
-	 * sqlsrv_field_metadata function
-	 *
-	 * @param int $fieldOffset	(optional)
-	 *
-	 * @return adoFieldObject
-	 *
-	 * @author 	KM Newnham
-	 * @date 	02/20/2013
-	 */
-	function fetchField($fieldOffset = -1)
-	{
-		return $this->fieldObjects[$fieldOffset];
-	}
-
-	function _seek($row)
-	{
-		return false;//There is no support for cursors in the driver at this time.  All data is returned via forward-only streams.
-	}
-
-	// speedup
-	function MoveNext()
-	{
-		if ($this->EOF)
-			return false;
-
-		$this->_currentRow++;
-
-		if ($this->_fetch())
-			return true;
-		$this->EOF = true;
-
-		return false;
-	}
-
-	function _fetch($ignore_fields=false)
-	{
-		if ($this->fetchMode & ADODB_FETCH_ASSOC) {
-			if ($this->fetchMode & ADODB_FETCH_NUM)
-				$this->fields = @sqlsrv_fetch_array($this->_queryID,SQLSRV_FETCH_BOTH);
-			else
-				$this->fields = @sqlsrv_fetch_array($this->_queryID,SQLSRV_FETCH_ASSOC);
-
-			if (is_array($this->fields))
-			{
-
-				if (ADODB_ASSOC_CASE == ADODB_ASSOC_CASE_LOWER)
-					$this->fields = array_change_key_case($this->fields,CASE_LOWER);
-				else if (ADODB_ASSOC_CASE == ADODB_ASSOC_CASE_UPPER)
-					$this->fields = array_change_key_case($this->fields,CASE_UPPER);
-
-			}
-		}
-		else
-			$this->fields = @sqlsrv_fetch_array($this->_queryID,SQLSRV_FETCH_NUMERIC);
-
-		if (!$this->fields)
-			return false;
-
-		return $this->fields;
-	}
-
-	/**
-	 * close() only needs to be called if you are worried about using too much
-	 * memory while your script is running. All associated result memory for
-	 * the specified result identifier will automatically be freed.
-	 */
-	function _close()
-	{
-		if(is_object($this->_queryID)) {
-			$rez = sqlsrv_free_stmt($this->_queryID);
-			$this->_queryID = false;
-			return $rez;
-		}
-		return true;
-	}
-
-	// mssql uses a default date like Dec 30 2000 12:00AM
-	static function UnixDate($v)
-	{
-		return ADORecordSet_array_mssqlnative::UnixDate($v);
-	}
-
-	static function UnixTimeStamp($v)
-	{
-		return ADORecordSet_array_mssqlnative::UnixTimeStamp($v);
-	}
-}
-
-
-class ADORecordSet_array_mssqlnative extends ADORecordSet_array {
-
-	// mssql uses a default date like Dec 30 2000 12:00AM
-	static function UnixDate($v)
-	{
-
-		if (is_numeric(substr($v,0,1)) && ADODB_PHPVER >= 0x4200) return parent::UnixDate($v);
-
-		global $ADODB_mssql_mths,$ADODB_mssql_date_order;
-
-		//Dec 30 2000 12:00AM
-		if ($ADODB_mssql_date_order == 'dmy') {
-			if (!preg_match( "|^([0-9]{1,2})[-/\. ]+([A-Za-z]{3})[-/\. ]+([0-9]{4})|" ,$v, $rr)) {
-				return parent::UnixDate($v);
-			}
-			if ($rr[3] <= TIMESTAMP_FIRST_YEAR) return 0;
-
-			$theday = $rr[1];
-			$themth =  substr(strtoupper($rr[2]),0,3);
-		} else {
-			if (!preg_match( "|^([A-Za-z]{3})[-/\. ]+([0-9]{1,2})[-/\. ]+([0-9]{4})|" ,$v, $rr)) {
-				return parent::UnixDate($v);
-			}
-			if ($rr[3] <= TIMESTAMP_FIRST_YEAR) return 0;
-
-			$theday = $rr[2];
-			$themth = substr(strtoupper($rr[1]),0,3);
-		}
-		$themth = $ADODB_mssql_mths[$themth];
-		if ($themth <= 0) return false;
-		// h-m-s-MM-DD-YY
-		return  adodb_mktime(0,0,0,$themth,$theday,$rr[3]);
-	}
-
-	static function UnixTimeStamp($v)
-	{
-
-		if (is_numeric(substr($v,0,1)) && ADODB_PHPVER >= 0x4200) return parent::UnixTimeStamp($v);
-
-		global $ADODB_mssql_mths,$ADODB_mssql_date_order;
-
-		//Dec 30 2000 12:00AM
-		if ($ADODB_mssql_date_order == 'dmy') {
-			if (!preg_match( "|^([0-9]{1,2})[-/\. ]+([A-Za-z]{3})[-/\. ]+([0-9]{4}) +([0-9]{1,2}):([0-9]{1,2}) *([apAP]{0,1})|"
-			,$v, $rr)) return parent::UnixTimeStamp($v);
-			if ($rr[3] <= TIMESTAMP_FIRST_YEAR) return 0;
-
-			$theday = $rr[1];
-			$themth =  substr(strtoupper($rr[2]),0,3);
-		} else {
-			if (!preg_match( "|^([A-Za-z]{3})[-/\. ]+([0-9]{1,2})[-/\. ]+([0-9]{4}) +([0-9]{1,2}):([0-9]{1,2}) *([apAP]{0,1})|"
-			,$v, $rr)) return parent::UnixTimeStamp($v);
-			if ($rr[3] <= TIMESTAMP_FIRST_YEAR) return 0;
-
-			$theday = $rr[2];
-			$themth = substr(strtoupper($rr[1]),0,3);
-		}
-
-		$themth = $ADODB_mssql_mths[$themth];
-		if ($themth <= 0) return false;
-
-		switch (strtoupper($rr[6])) {
-		case 'P':
-			if ($rr[4]<12) $rr[4] += 12;
-			break;
-		case 'A':
-			if ($rr[4]==12) $rr[4] = 0;
-			break;
-		default:
-			break;
-		}
-		// h-m-s-MM-DD-YY
-		return  adodb_mktime($rr[4],$rr[5],0,$themth,$theday,$rr[3]);
-	}
-}
-
-/*
-Code Example 1:
-
-select	object_name(constid) as constraint_name,
-		object_name(fkeyid) as table_name,
-		col_name(fkeyid, fkey) as column_name,
-	object_name(rkeyid) as referenced_table_name,
-	col_name(rkeyid, rkey) as referenced_column_name
-from sysforeignkeys
-where object_name(fkeyid) = x
-order by constraint_name, table_name, referenced_table_name,  keyno
-
-Code Example 2:
-select	constraint_name,
-	column_name,
-	ordinal_position
-from information_schema.key_column_usage
-where constraint_catalog = db_name()
-and table_name = x
-order by constraint_name, ordinal_position
-
-http://www.databasejournal.com/scripts/article.php/1440551
-*/

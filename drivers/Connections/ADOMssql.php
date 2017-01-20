@@ -17,16 +17,12 @@ Set tabs to 4 for best viewing.
   Please check http://bugs.php.net/ for more info.
 */
 
+namespace ADOdb\drivers\Connections;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-if (!defined('_ADODB_ADO_LAYER')) {
-	if (PHP_VERSION >= 5) include(ADODB_DIR."/drivers/adodb-ado5.inc.php");
-	else include(ADODB_DIR."/drivers/adodb-ado.inc.php");
-}
-
-
-class  ADODB_ado_mssql extends ADODB_ado {
+class  ADOMssql extends ADOMssqlCompat {
 	var $databaseType = 'ado_mssql';
 	var $hasTop = 'top';
 	var $hasInsertID = true;
@@ -139,8 +135,3 @@ class  ADODB_ado_mssql extends ADODB_ado {
 
 } // end class
 
-class ADORecordSet_ado_mssql extends ADORecordSet_ado {
-
-	var $databaseType = 'ado_mssql';
-
-}

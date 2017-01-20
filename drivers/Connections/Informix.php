@@ -15,12 +15,12 @@
 *
 */
 
+namespace ADOdb\drivers\Connections;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-include_once(ADODB_DIR.'/drivers/adodb-informix72.inc.php');
-
-class ADODB_informix extends ADODB_informix72 {
+class Informix extends Informix72 {
 	var $databaseType = "informix";
 	var $hasTop = 'FIRST';
 	var $ansiOuter = true;
@@ -31,6 +31,3 @@ class ADODB_informix extends ADODB_informix72 {
 	}
 }
 
-class ADORecordset_informix extends ADORecordset_informix72 {
-	var $databaseType = "informix";
-}

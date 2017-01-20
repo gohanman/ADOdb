@@ -42,15 +42,15 @@
 *  true cross-db compatibility from the application point of view.
 */
 
+namespace ADOdb\drivers\Connections;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
 // one useful constant
 if (!defined('SINGLEQUOTE')) define('SINGLEQUOTE', "'");
 
-include_once(ADODB_DIR.'/drivers/adodb-mssql.inc.php');
-
-class ADODB_mssql_n extends ADODB_mssql {
+class MssqlN extends Mssql {
 	var $databaseType = "mssql_n";
 
 	function _query($sql,$inputarr=false)
@@ -240,6 +240,3 @@ class ADODB_mssql_n extends ADODB_mssql {
 
 }
 
-class ADORecordset_mssql_n extends ADORecordset_mssql {
-	var $databaseType = "mssql_n";
-}
