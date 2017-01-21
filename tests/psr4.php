@@ -23,6 +23,12 @@ $connections = array(
     //'ADOdb\\drivers\\Connections\\MssqlNative',
     'ADOdb\\drivers\\Connections\\MssqlN',
     'ADOdb\\drivers\\Connections\\MssqlPo',
+    'ADOdb\\drivers\\Connections\\mysql',
+    'ADOdb\\drivers\\Connections\\mysqli',
+    'ADOdb\\drivers\\Connections\\mysqlt',
+    'ADOdb\\drivers\\Connections\\oci8',
+    'ADOdb\\drivers\\Connections\\oci805',
+    'ADOdb\\drivers\\Connections\\oci8po',
 );
 
 $record_sets = array(
@@ -45,6 +51,12 @@ $record_sets = array(
     'ADOdb\\drivers\\RecordSets\\MssqlNative',
     'ADOdb\\drivers\\RecordSets\\MssqlN',
     'ADOdb\\drivers\\RecordSets\\MssqlPo',
+    'ADOdb\\drivers\\RecordSets\\mysql',
+    'ADOdb\\drivers\\RecordSets\\mysqli',
+    'ADOdb\\drivers\\RecordSets\\mysqlt',
+    'ADOdb\\drivers\\RecordSets\\oci8',
+    'ADOdb\\drivers\\RecordSets\\oci805',
+    'ADOdb\\drivers\\RecordSets\\oci8po',
 );
 
 foreach ($connections as $con) {

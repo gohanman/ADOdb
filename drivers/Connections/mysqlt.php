@@ -1,5 +1,4 @@
 <?php
-
 /*
 @version   v5.21.0-dev  ??-???-2016
 @copyright (c) 2000-2013 John Lim (jlim#natsoft.com). All rights reserved.
@@ -17,13 +16,12 @@
   Requires mysql client. Works on Windows and Unix.
 */
 
+namespace ADOdb\drivers\Connections;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-include_once(ADODB_DIR."/drivers/adodb-mysql.inc.php");
-
-
-class ADODB_mysqlt extends ADODB_mysql {
+class mysqlt extends mysql {
 	var $databaseType = 'mysqlt';
 	var $ansiOuter = true; // for Version 3.23.17 or later
 	var $hasTransactions = true;
@@ -85,48 +83,4 @@ class ADODB_mysqlt extends ADODB_mysql {
 
 }
 
-class ADORecordSet_mysqlt extends ADORecordSet_mysql{
-	var $databaseType = "mysqlt";
 
-	function __construct($queryID,$mode=false)
-	{
-		if ($mode === false) {
-			global $ADODB_FETCH_MODE;
-			$mode = $ADODB_FETCH_MODE;
-		}
-
-		switch ($mode)
-		{
-		case ADODB_FETCH_NUM: $this->fetchMode = MYSQL_NUM; break;
-		case ADODB_FETCH_ASSOC:$this->fetchMode = MYSQL_ASSOC; break;
-
-		case ADODB_FETCH_DEFAULT:
-		case ADODB_FETCH_BOTH:
-		default: $this->fetchMode = MYSQL_BOTH; break;
-		}
-
-		$this->adodbFetchMode = $mode;
-		parent::__construct($queryID);
-	}
-
-	function MoveNext()
-	{
-		if (@$this->fields = mysql_fetch_array($this->_queryID,$this->fetchMode)) {
-			$this->_currentRow += 1;
-			return true;
-		}
-		if (!$this->EOF) {
-			$this->_currentRow += 1;
-			$this->EOF = true;
-		}
-		return false;
-	}
-}
-
-class ADORecordSet_ext_mysqlt extends ADORecordSet_mysqlt {
-
-	function MoveNext()
-	{
-		return adodb_movenext($this);
-	}
-}

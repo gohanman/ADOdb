@@ -14,12 +14,13 @@
  * Oracle 8.0.5 driver
 */
 
+namespace ADOdb\drivers\Connections;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-include_once(ADODB_DIR.'/drivers/adodb-oci8.inc.php');
-
-class ADODB_oci805 extends ADODB_oci8 {
+class oci805 extends oci8 {
 	var $databaseType = "oci805";
 	var $connectSID = true;
 
@@ -42,10 +43,7 @@ class ADODB_oci805 extends ADODB_oci8 {
 		}
 		*/
 
-		return ADOConnection::SelectLimit($sql,$nrows,$offset,$inputarr,$secs2cache);
+		return \ADOConnection::SelectLimit($sql,$nrows,$offset,$inputarr,$secs2cache);
 	}
 }
 
-class ADORecordset_oci805 extends ADORecordset_oci8 {
-	var $databaseType = "oci805";
-}
