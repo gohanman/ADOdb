@@ -82,7 +82,7 @@ if (ADODB_PHPVER >= 0x4300) {
 		'JUL'=>7,'AUG'=>8,'SEP'=>9,'OCT'=>10,'NOV'=>11,'DEC'=>12);
 }
 
-class mssql_native extends ADOConnection {
+class mssqlnative extends ADOConnection {
 	var $databaseType = "mssqlnative";
 	var $dataProvider = "mssqlnative";
 	var $replaceQuote = "''"; // string to use to replace quotes
@@ -117,7 +117,7 @@ class mssql_native extends ADOConnection {
 	var $sysDate = 'convert(datetime,convert(char,GetDate(),102),102)';
 	var $sysTimeStamp = 'GetDate()';
 	var $maxParameterLen = 4000;
-	var $arrayClass = 'ADOdb\\drivers\\Arrays\\mssql_native';
+	var $arrayClass = 'ADOdb\\drivers\\Arrays\\mssqlnative';
 	var $uniqueSort = true;
 	var $leftOuter = '*=';
 	var $rightOuter = '=*';

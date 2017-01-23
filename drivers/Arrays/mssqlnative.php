@@ -23,7 +23,7 @@ Set tabs to 4 for best viewing.
 namespace ADOdb\drivers\Arrays;
 use \ADORecordSet_array;
 
-class mssql_native extends ADORecordSet_array {
+class mssqlnative extends ADORecordSet_array {
 
 	// mssql uses a default date like Dec 30 2000 12:00AM
 	static function UnixDate($v)

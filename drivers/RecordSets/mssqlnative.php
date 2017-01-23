@@ -21,14 +21,14 @@ Set tabs to 4 for best viewing.
 */
 
 namespace ADOdb\drivers\RecordSets;
-use ADOdb\drivers\Arrays\mssql_native as MssqlNativeArray;
+use ADOdb\drivers\Arrays\mssqlnative as MssqlNativeArray;
 use \ADORecordSet;
 
 /*--------------------------------------------------------------------------------------
 	Class Name: Recordset
 --------------------------------------------------------------------------------------*/
 
-class mssql_native extends ADORecordSet {
+class mssqlnative extends ADORecordSet {
 
 	var $databaseType = "mssqlnative";
 	var $canSeek = false;
