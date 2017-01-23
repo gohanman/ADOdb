@@ -25,7 +25,7 @@ use \ADORecordSet;
 	 Class Name: Recordset
 --------------------------------------------------------------------------------------*/
 
-class ADORecordSet_mysql extends ADORecordSet{
+class mysql extends ADORecordSet{
 
 	var $databaseType = "mysql";
 	var $canSeek = true;

@@ -33,6 +33,7 @@
 	"autoload" : {
 		"files" : ["adodb.inc.php"],
         "psr-4" : {
+            "ADOdb\\datadict\\" : "datadict/"
             "ADOdb\\drivers\\" : "drivers/"
         }
 	}

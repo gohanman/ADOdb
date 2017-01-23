@@ -17,6 +17,7 @@
 */
 
 namespace ADOdb\drivers\RecordSets;
+use \ADOConnection;
 use \ADORecordSet;
 
 /*--------------------------------------------------------------------------------------

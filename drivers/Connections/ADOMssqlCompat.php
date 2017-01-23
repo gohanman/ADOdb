@@ -20,10 +20,10 @@ namespace ADOdb\drivers\Connections;
     the real ADOMssql implementation to inherit from
 */
 if (PHP_VERSION >= 5) {
-    class ADOMssqlCompat extends ADO5 {
+    class ADOMssqlCompat extends ado5 {
     }
 } else {
-    class ADOMssqlCompat extends ADO {
+    class ADOMssqlCompat extends ado {
     }
 }
 

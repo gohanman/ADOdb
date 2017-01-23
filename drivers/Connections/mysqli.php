@@ -60,7 +60,7 @@ class mysqli extends ADOConnection {
 	var $_bindInputArray = false;
 	var $nameQuote = '`';		/// string to use to quote identifiers and names
 	var $optionFlags = array(array(MYSQLI_READ_DEFAULT_GROUP,0));
-	var $arrayClass = 'ADORecordSet_array_mysqli';
+	var $arrayClass = 'ADOdb\\drivers\\Arrays\\mysqli';
 	var $multiQuery = false;
 
 	/*

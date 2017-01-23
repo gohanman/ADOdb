@@ -43,7 +43,7 @@ class oci805 extends oci8 {
 		}
 		*/
 
-		return \ADOConnection::SelectLimit($sql,$nrows,$offset,$inputarr,$secs2cache);
+		return ADOConnection::SelectLimit($sql,$nrows,$offset,$inputarr,$secs2cache);
 	}
 }
 

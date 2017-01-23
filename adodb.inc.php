@@ -1295,6 +1295,7 @@ if (!defined('_ADODB_LAYER')) {
 		}
 
 		// return simplified recordset for inserts/updates/deletes with lower overhead
+        $rsNamespace = 'ADOdb\\drivers\\RecordSets\\';
 		if ($this->_queryID === true) {
 			$rsclass = $this->rsPrefix.'empty';
 			$rs = (class_exists($rsclass)) ? new $rsclass():  new ADORecordSet_empty();
@@ -1307,9 +1308,9 @@ if (!defined('_ADODB_LAYER')) {
 			// recordset class if the database type is changed, so we must
 			// treat it specifically. The mysql driver leaves the
 			// databaseType as pdo
-			$rsclass = $this->rsPrefix . 'pdo_' . $this->databaseType;
+			$rsclass = $rsNamespace . $this->rsPrefix . 'pdo_' . $this->databaseType;
 		} else {
-			$rsclass = $this->rsPrefix . $this->databaseType;
+			$rsclass = $rsNamespace . $this->rsPrefix . $this->databaseType;
 		}
 
 		// return real recordset from select statement
@@ -4839,10 +4840,10 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 				break;
 		}
 
-		$file = ADODB_DIR."/drivers/adodb-".$db.".inc.php";
-		@include_once($file);
+        $class = 'ADOdb\\drivers\\Connections\\' . $db;
+		$file = ADODB_DIR."/drivers/Connections/" . $db . ".php";
 		$ADODB_LASTDB = $class;
-		if (class_exists("ADODB_" . $class)) {
+		if (class_exists($class)) {
 			return $class;
 		}
 
@@ -4983,13 +4984,12 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 				return false;
 			}
 
-			$cls = 'ADODB_'.$db;
-			if (!class_exists($cls)) {
+			if (!class_exists($db)) {
 				adodb_backtrace();
 				return false;
 			}
 
-			$obj = new $cls();
+			$obj = new $db();
 		}
 
 		# constructor should not fail
