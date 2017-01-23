@@ -40,10 +40,13 @@ In ADOdb, named quotes for MS SQL Server use ". From the MSSQL Docs:
 
 */
 
+namespace ADOdb\datadict;
+use \ADODB_DataDict;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-class ADODB2_mssqlnative extends ADODB_DataDict {
+class mssqlnative extends ADODB_DataDict {
 	var $databaseType = 'mssqlnative';
 	var $dropIndex = 'DROP INDEX %1$s ON %2$s';
 	var $renameTable = "EXEC sp_rename '%s','%s'";

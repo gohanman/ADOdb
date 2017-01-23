@@ -12,10 +12,14 @@
 
 */
 
+namespace ADOdb\datadict;
+use \ADODB_DataDict;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-class ADODB2_postgres extends ADODB_DataDict {
+class postgres extends ADODB_DataDict {
 
 	var $databaseType = 'postgres';
 	var $seqField = false;

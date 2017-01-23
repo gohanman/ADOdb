@@ -13,10 +13,13 @@
   Modified from datadict-generic.inc.php for sapdb by RalfBecker-AT-outdoor-training.de
 */
 
+namespace ADOdb\datadict;
+use \ADODB_DataDict;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-class ADODB2_sapdb extends ADODB_DataDict {
+class sapdb extends ADODB_DataDict {
 
 	var $databaseType = 'sapdb';
 	var $seqField = false;

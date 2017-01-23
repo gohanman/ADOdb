@@ -14,10 +14,14 @@
 
 */
 
+namespace ADOdb\datadict;
+use \ADODB_DataDict;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-class ADODB2_sqlite extends ADODB_DataDict {
+class sqlite extends ADODB_DataDict {
 	var $databaseType = 'sqlite';
 	var $seqField = false;
 	var $addCol=' ADD COLUMN';

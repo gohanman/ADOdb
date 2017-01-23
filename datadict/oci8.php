@@ -12,10 +12,14 @@
 
 */
 
+namespace ADOdb\datadict;
+use \ADODB_DataDict;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-class ADODB2_oci8 extends ADODB_DataDict {
+class oci8 extends ADODB_DataDict {
 
 	var $databaseType = 'oci8';
 	var $seqField = false;

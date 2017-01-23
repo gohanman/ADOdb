@@ -5136,14 +5136,13 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 
 		include_once(ADODB_DIR.'/adodb-lib.inc.php');
 		include_once(ADODB_DIR.'/adodb-datadict.inc.php');
-		$path = ADODB_DIR."/datadict/datadict-$drivername.inc.php";
 
-		if (!file_exists($path)) {
-			ADOConnection::outp("Dictionary driver '$path' not available");
+        $class = 'ADOdb\\datadict\\' . $drivername;
+
+		if (!class_exists($class)) {
+			ADOConnection::outp("Dictionary driver '$drivername' not available");
 			return false;
 		}
-		include_once($path);
-		$class = "ADODB2_$drivername";
 		$dict = new $class();
 		$dict->dataProvider = $conn->dataProvider;
 		$dict->connection = $conn;

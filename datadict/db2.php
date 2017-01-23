@@ -11,10 +11,14 @@
   Set tabs to 4 for best viewing.
 
 */
+namespace ADOdb\datadict;
+use \ADODB_DataDict;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-class ADODB2_db2 extends ADODB_DataDict {
+class db2 extends ADODB_DataDict {
 
 	var $databaseType = 'db2';
 	var $seqField = false;

@@ -12,10 +12,13 @@
 
 */
 
+namespace ADOdb\datadict;
+use \ADODB_DataDict;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-class ADODB2_mysql extends ADODB_DataDict {
+class mysql extends ADODB_DataDict {
 	var $databaseType = 'mysql';
 	var $alterCol = ' MODIFY COLUMN';
 	var $alterTableAddIndex = true;

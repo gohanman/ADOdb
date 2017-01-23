@@ -12,10 +12,14 @@
 
 */
 
+namespace ADOdb\datadict;
+use \ADODB_DataDict;
+use \ADOConnection;
+
 // security - hide paths
 if (!defined('ADODB_DIR')) die();
 
-class ADODB2_ibase extends ADODB_DataDict {
+class ibase extends ADODB_DataDict {
 
 	var $databaseType = 'ibase';
 	var $seqField = false;
