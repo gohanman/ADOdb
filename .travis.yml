@@ -1,0 +1,16 @@
+language: php
+
+services:
+    - mysql
+    - postgres
+
+sudo: false
+
+install:
+    - mysql -u root -e "CREATE DATABASE adodb_test;"
+    - psql -U postgres -c "CREATE DATABASE adodb_test;"
+    - echo '{ "postgres": { "user":"postgres", "password":"" }, "mysql": { "user":"root", "password":"" } }' > tests/credentials.json
+
+script:
+    - phpunit -d max_execution_time=0 -c phpunit.xml
+

@@ -1,0 +1,23 @@
+<phpunit bootstrap="tests/bootstrap.php"> 
+    <logging>
+        <log type="coverage-clover" target="build/logs/clover.xml"/>
+    </logging>
+    <testsuites>
+        <testsuite name="main">
+        <file>tests/MySQLi.php</file>
+        <file>tests/PDO_MySQL.php</file>
+        <file>tests/Postgres9.php</file>
+        <file>tests/PDO_Postgres.php</file>
+    </testsuite>
+</testsuites>
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">.</directory>
+            <exclude>
+                <directory>pear</directory>
+                <directory>perf</directory>
+                <directory>tests</directory>
+            </exclude>
+        </whitelist>
+    </filter>
+</phpunit>
