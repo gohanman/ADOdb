@@ -106,5 +106,167 @@ class MySQLiTest extends PHPUnit_Framework_TestCase
         $con->Execute("DROP TABLE IF EXISTS test");
         $this->assertEquals(null, $con->Close());
     }
+
+    public function testActiveRecord()
+    {
+        if (!function_exists('mysqli_connect')) {
+            echo "Skipping MySQLi tests" . PHP_EOL;
+            return;
+        }
+        if (!class_exists('Person')) {
+            include(__DIR__ . '/ActiveRecordClasses.php');
+        }
+        $credentials = json_decode(file_get_contents(__DIR__ . '/credentials.json'), true);
+        $credentials = $credentials['mysql'];
+        $db = ADONewConnection('mysqli');
+        $db->Connect('localhost', $credentials['user'], $credentials['password'], 'adodb_test');
+        ADOdb_Active_Record::SetDatabaseAdapter($db);
+
+        $db->Execute("CREATE TABLE `persons` (
+                        `id` int(10) unsigned NOT NULL auto_increment,
+                        `name_first` varchar(100) NOT NULL default '',
+                        `name_last` varchar(100) NOT NULL default '',
+                        `favorite_color` varchar(100) NOT NULL default '',
+                        PRIMARY KEY  (`id`)
+                    ) ENGINE=MyISAM;
+                   ");
+
+        $db->Execute("CREATE TABLE `children` (
+                        `id` int(10) unsigned NOT NULL auto_increment,
+                        `person_id` int(10) unsigned NOT NULL,
+                        `name_first` varchar(100) NOT NULL default '',
+                        `name_last` varchar(100) NOT NULL default '',
+                        `favorite_pet` varchar(100) NOT NULL default '',
+                        PRIMARY KEY  (`id`)
+                    ) ENGINE=MyISAM;
+                   ");
+
+        $person = new Person('persons');
+        ADOdb_Active_Record::$_quoteNames = '111';
+        $this->assertEquals(array('id', 'name_first', 'name_last', 'favorite_color'), $person->getAttributeNames());
+
+        $person = new Person('persons');
+        $person->name_first = 'Andi';
+        $person->name_last  = 'Gutmans';
+        $this->assertEquals(false, $person->save()); // this save() will fail on INSERT as favorite_color is a must fill...
+
+        $person = new Person('persons');
+        $person->name_first     = 'Andi';
+        $person->name_last      = 'Gutmans';
+        $person->favorite_color = 'blue';
+        $this->assertEquals(true, $person->save()); // this save will perform an INSERT successfully
+
+        $person->favorite_color = 'red';
+        $this->assertEquals(1, $person->save()); // this save() will perform an UPDATE
+
+        $person = new Person('persons');
+        $person->name_first     = 'John';
+        $person->name_last      = 'Lim';
+        $person->favorite_color = 'lavender';
+        $this->assertEquals(true, $person->save()); // this save will perform an INSERT successfully
+
+        $person2 = new Person('persons');
+        $person2->Load('id=2');
+        $activeArr = $db->GetActiveRecordsClass($class = "Person",$table = "persons","id=".$db->Param(0),array(2));
+        $person2 = $activeArr[0];
+        $this->assertEquals('John', $person2->name_first);
+        $this->assertEquals('Person', get_class($person2));
+
+        $db->Execute("insert into children (person_id,name_first,name_last) values (2,'Jill','Lim')");
+        $db->Execute("insert into children (person_id,name_first,name_last) values (2,'Joan','Lim')");
+        $db->Execute("insert into children (person_id,name_first,name_last) values (2,'JAMIE','Lim')");
+
+        $newperson2 = new Person();
+        $person2->HasMany('children','person_id');
+        $person2->Load('id=2');
+        $person2->name_last='green';
+        $c = $person2->children;
+        $person2->save();
+        $this->assertInternalType('array', $c);
+        $this->assertEquals(3, sizeof($c));
+        $this->assertEquals('Jill', $c[0]->name_first);
+        $this->assertEquals('Joan', $c[1]->name_first);
+        $this->assertEquals('JAMIE', $c[2]->name_first);
+
+        $ch = new Child('children',array('id'));
+        $ch->BelongsTo('person','person_id','id');
+        $ch->Load('id=1');
+        $this->assertEquals('Jill', $ch->name_first);
+
+        $p = $ch->person;
+        $this->assertEquals('John', $p->name_first);
+
+        $p->hasMany('children','person_id');
+        $p->LoadRelations('children', "	Name_first like 'J%' order by id",1,2);
+        $this->assertEquals(2, sizeof($p->children));
+        $this->assertEquals('JAMIE', $p->children[1]->name_first);
+
+        $db->Execute('DROP TABLE persons');
+        $db->Execute('DROP TABLE children');
+    }
+
+    public function testXmlSchema()
+    {
+        if (!function_exists('mysqli_connect')) {
+            echo "Skipping MySQLi tests" . PHP_EOL;
+            return;
+        }
+        $credentials = json_decode(file_get_contents(__DIR__ . '/credentials.json'), true);
+        $credentials = $credentials['mysql'];
+        $db = ADONewConnection('mysqli');
+        $db->Connect('localhost', $credentials['user'], $credentials['password'], 'adodb_test');
+        $schema = new adoSchema($db);
+        $sql = $schema->ParseSchema(__DIR__ . '/xmlschema.xml');
+        $this->assertEquals(2, $schema->ExecuteSchema($sql));
+        $this->assertEquals(null, $schema->Destroy());
+        $db->Execute('DROP TABLE mytable');
+    }
+
+    public function testDataDict()
+    {
+        if (!function_exists('mysqli_connect')) {
+            echo "Skipping MySQLi tests" . PHP_EOL;
+            return;
+        }
+        $credentials = json_decode(file_get_contents(__DIR__ . '/credentials.json'), true);
+        $credentials = $credentials['mysql'];
+        $db = ADONewConnection('mysqli');
+        $dict = NewDataDictionary($db);
+
+        $opts = array('REPLACE','mysql' => 'ENGINE=INNODB', 'oci8' => 'TABLESPACE USERS');
+        $flds = "
+        ID            I           AUTO KEY,
+        FIRSTNAME     VARCHAR(30) DEFAULT 'Joan' INDEX idx_name,
+        LASTNAME      VARCHAR(28) DEFAULT 'Chen' key INDEX idx_name INDEX idx_lastname,
+        averylonglongfieldname X(1024) DEFAULT 'test',
+        price         N(7.2)  DEFAULT '0.00',
+        MYDATE        D      DEFDATE INDEX idx_date,
+        BIGFELLOW     X      NOTNULL,
+        TS_SECS            T      DEFTIMESTAMP,
+        TS_SUBSEC   TS DEFTIMESTAMP
+        ";
+
+        $this->assertEquals(array('CREATE DATABASE adodb_test'), $dict->CreateDatabase('adodb_test'));
+        $dict->SetSchema('adodb_test');
+        $create = $dict->CreateTableSQL('testtable', $flds, $opts);
+        // getting whitespace aligned to compate the actual create table
+        // is a pain in the neck
+        $this->assertEquals(5, count($create));
+        $this->assertEquals(
+            array("ALTER TABLE adodb_test.testtable ADD  FULLTEXT INDEX idx  (price, firstname, lastname)"),
+            $dict->CreateIndexSQL('idx','testtable','price,firstname,lastname',array('BITMAP','FULLTEXT','CLUSTERED','HASH'))
+        );
+        $addflds = array(array('height', 'F'),array('weight','F'));
+        $this->assertEquals(
+            array("ALTER TABLE adodb_test.testtable ADD height DOUBLE", "ALTER TABLE adodb_test.testtable ADD weight DOUBLE"),
+            $dict->AddColumnSQL('testtable', $addflds)
+        );
+        $addflds = array(array('height', 'F','NOTNULL'),array('weight','F','NOTNULL'));
+        $this->assertEquals(
+            array("ALTER TABLE adodb_test.testtable MODIFY COLUMN height DOUBLE NOT NULL", 
+                  "ALTER TABLE adodb_test.testtable MODIFY COLUMN weight DOUBLE NOT NULL"),
+            $dict->AlterColumnSQL('testtable', $addflds)
+        );
+    }
 }
 
