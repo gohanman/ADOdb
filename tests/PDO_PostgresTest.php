@@ -92,7 +92,7 @@ class PDO_PostgresTest extends PHPUnit_Framework_TestCase
         $cols = $con->MetaColumns('test');
         $this->assertEquals(true, $cols['ID']->primary_key);
         $this->assertEquals(true, $cols['ID']->not_null);
-        $this->assertEquals('int', $cols['ID']->type);
+        $this->assertEquals('int4', $cols['ID']->type);
         $this->assertEquals('id', $cols['ID']->name);
         $this->assertEquals(array(), $con->MetaIndexes('test'));
         $this->assertEquals(array('ID'=>'id', 'VAL'=>'val'), $con->MetaColumnNames('test'));

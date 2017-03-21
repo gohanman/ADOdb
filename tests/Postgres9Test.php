@@ -62,8 +62,11 @@ class Postgres9Test extends PHPUnit_Framework_TestCase
         $this->assertEquals(2, $rs->NumRows());
 
         $this->assertEquals(false, $con->RowLock('test', 'WHERE id=1'));
+        var_dump($con->ErrorMsg());
         $this->assertEquals(false, $con->CreateSequence());
+        var_dump($con->ErrorMsg());
         $this->assertEquals(false, $con->DropSequence());
+        var_dump($con->ErrorMsg());
 
         var_dump($con->GetOne('SELECT 1 AS id'));
         var_dump($con->ErrorMsg());
