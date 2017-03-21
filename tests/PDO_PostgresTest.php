@@ -1,6 +1,6 @@
 <?php
 
-class PDO_MySQLTest extends PHPUnit_Framework_TestCase
+class PDO_PostgresTest extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
