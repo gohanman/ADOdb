@@ -30,7 +30,7 @@ class PDO_MySQLTest extends PHPUnit_Framework_TestCase
 
         $con->Execute("DROP TABLE IF EXISTS test");
 
-        $create = $con->Prepare("CREATE TABLE test (id INT NOT NULL AUTO_INCREMENT, val INT, PRIMARY KEY(id), ENGINE InnoDB)");
+        $create = $con->Prepare("CREATE TABLE test (id INT NOT NULL AUTO_INCREMENT, val INT, PRIMARY KEY(id)) ENGINE InnoDB");
         $con->Execute($create);
         $insert = $con->Prepare("INSERT INTO test (val) VALUES (?)");
         $con->Execute($insert, array(1));
@@ -38,7 +38,7 @@ class PDO_MySQLTest extends PHPUnit_Framework_TestCase
         $con->Execute('UPDATE test SET val=2 WHERE id=1');
         $this->assertEquals(1, $con->Affected_Rows());
         $this->assertEquals('', $con->ErrorMsg());
-        $this->assertEquals(0, $con->ErrorNo());
+        $this->assertEquals('HY000', $con->ErrorNo());
         $this->assertEquals(array('id'), $con->MetaPrimaryKeys('test'));
 
         $con->BeginTrans();
