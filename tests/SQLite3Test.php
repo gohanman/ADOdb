@@ -79,7 +79,7 @@ class SQLite3Test extends PHPUnit_Framework_TestCase
         $this->assertEquals(" CASE WHEN id is null THEN 0 ELSE id END ", $con->IfNull('id', 0));
         $this->assertEquals("a||b", $con->Concat('a', 'b'));
 
-        $this->assertEquals(true, in_array('adodb_test', $con->MetaDatabases()));
+        $this->assertEquals(false, $con->MetaDatabases());
         $this->assertEquals(array('test'), $con->MetaTables());
         $cols = $con->MetaColumns('test');
         $this->assertEquals(true, $cols['ID']->auto_increment);
