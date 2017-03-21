@@ -2,7 +2,33 @@
 
 class MySQLiTest extends PHPUnit_Framework_TestCase
 {
-    public function testDB()
+    public function testStateless()
+    {
+        if (!function_exists('mysqli_connect')) {
+            echo "Skipping MySQLi tests" . PHP_EOL;
+            return;
+        }
+
+        $con = ADONewConnection('mysqli');
+        $this->assertInternalType('object', $con, 'Could not get driver object');
+        $this->assertEquals(false, $con->IsConnected());
+
+        $this->assertEquals('DATE_FORMAT(NOW(),\'%Y-%m-%d\')', $con->SQLDate('Y-m-d'));
+        $this->assertEquals('DATE_FORMAT(foo,\'%Y-%m-%d\')', $con->SQLDate('Y-m-d', 'foo'));
+
+        $this->assertEquals("'foo'", $con->qstr('foo'));
+        $this->assertEquals("'foo'", $con->Quote('foo'));
+        $byRef = 'foo';
+        $con->q($byRef);
+        $this->assertEquals("'foo'", $byRef);
+        $this->assertEquals('?', $con->Param('foo'));
+
+        $this->assertEquals(" IFNULL(id, 0) ", $con->IfNull('id', 0));
+        $this->assertEquals("CONCAT(a,b)", $con->Concat('a', 'b'));
+
+    }
+
+    public function testStateful()
     {
         if (!function_exists('mysqli_connect')) {
             echo "Skipping MySQLi tests" . PHP_EOL;
@@ -12,9 +38,6 @@ class MySQLiTest extends PHPUnit_Framework_TestCase
         $credentials = $credentials['mysql'];
 
         $con = ADONewConnection('mysqli');
-        $this->assertInternalType('object', $con, 'Could not get driver object');
-        $this->assertEquals(false, $con->IsConnected());
-
         $con->Connect('localhost', $credentials['user'], $credentials['password'], 'adodb_test');
         $this->assertEquals(true, $con->IsConnected(), 'Could not connect');
 
@@ -23,18 +46,9 @@ class MySQLiTest extends PHPUnit_Framework_TestCase
         $this->assertArrayHasKey('version', $info);
 
         $this->assertEquals(true, is_numeric($con->Time()), 'Could not get time');
-        $this->assertEquals('DATE_FORMAT(NOW(),\'%Y-%m-%d\')', $con->SQLDate('Y-m-d'));
-        $this->assertEquals('DATE_FORMAT(foo,\'%Y-%m-%d\')', $con->SQLDate('Y-m-d', 'foo'));
 
         $this->assertEquals('foo', $con->Prepare('foo'));
         $this->assertEquals('foo', $con->PrepareSP('foo'));
-
-        $this->assertEquals("'foo'", $con->qstr('foo'));
-        $this->assertEquals("'foo'", $con->Quote('foo'));
-        $byRef = 'foo';
-        $con->q($byRef);
-        $this->assertEquals("'foo'", $byRef);
-        $this->assertEquals('?', $con->Param('foo'));
 
         $con->Execute("DROP TABLE IF EXISTS test");
 
@@ -74,9 +88,6 @@ class MySQLiTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(array(0=>array(0=>1,'id'=>1)), $con->CacheGetArray('SELECT 1 AS id'));
         $this->assertEquals(array(0=>1,'id'=>1), $con->GetRow('SELECT 1 AS id'));
         $this->assertEquals(array(0=>1,'id'=>1), $con->CacheGetRow(5, 'SELECT 1 AS id'));
-
-        $this->assertEquals(" IFNULL(id, 0) ", $con->IfNull('id', 0));
-        $this->assertEquals("CONCAT(a,b)", $con->Concat('a', 'b'));
 
         $this->assertEquals(true, in_array('adodb_test', $con->MetaDatabases()));
         $this->assertEquals(array('test'), $con->MetaTables());
