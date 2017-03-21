@@ -68,7 +68,6 @@ class PDO_SQLiteTest extends PHPUnit_Framework_TestCase
         $rs = $con->Execute("SELECT id FROM test");
         $this->assertEquals(2, $rs->NumRows());
 
-        $this->assertEquals(false, $con->RowLock('test', 'id=1'));
         $this->assertNotEquals(false, $con->CreateSequence());
         $this->assertEquals(1, $con->GenID());
         $this->assertEquals(2, $con->GenID());
