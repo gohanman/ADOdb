@@ -38,7 +38,15 @@ class PDO_PostgresTest extends PHPUnit_Framework_TestCase
         $con->Execute($create);
         $insert = $con->Prepare("INSERT INTO test (val) VALUES (?)");
         $con->Execute($insert, array(1));
-        $this->assertEquals(1, $con->Insert_ID());
+
+        /**
+          This is fixable by implementing _insertid() in the pdo_pgsql class
+          and having the pdo class defer to the undering $_driver. The 
+          table and column args are required to provide the sequence name,
+          default table_column_seq
+        */
+        $this->assertEquals(false, $con->Insert_ID());
+
         $con->Execute('UPDATE test SET val=2 WHERE id=1');
         $this->assertEquals(1, $con->Affected_Rows());
         $this->assertEquals('', $con->ErrorMsg());

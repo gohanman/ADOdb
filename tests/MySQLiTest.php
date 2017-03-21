@@ -19,7 +19,7 @@ class MySQLiTest extends PHPUnit_Framework_TestCase
         $this->assertArrayHasKey('version', $info);
 
         $this->assertEquals(true, is_numeric($con->Time()), 'Could not get time');
-        $this->assertEquals('CURDATE()', $con->SQLDate('Y-m-d'));
+        $this->assertEquals('DATE_FORMAT(NOW(),\'%Y-%m-%d\')', $con->SQLDate('Y-m-d'));
         $this->assertEquals('DATE_FORMAT(foo,\'%Y-%m-%d\')', $con->SQLDate('Y-m-d', 'foo'));
 
         $this->assertEquals('foo', $con->Prepare('foo'));

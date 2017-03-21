@@ -19,7 +19,7 @@ class Postgres9Test extends PHPUnit_Framework_TestCase
         $this->assertArrayHasKey('version', $info);
 
         $this->assertEquals(true, is_numeric($con->Time()), 'Could not get time');
-        $this->assertEquals('CURRENT_DATE', $con->SQLDate('Y-m-d'));
+        $this->assertEquals('TO_CHAR(CURRENT_TIMESTAMP,\'YYYY-MM-DD\')', $con->SQLDate('Y-m-d'));
         $this->assertEquals('TO_CHAR(foo,\'YYYY-MM-DD\')', $con->SQLDate('Y-m-d', 'foo'));
 
         $this->assertEquals('foo', $con->Prepare('foo'));
