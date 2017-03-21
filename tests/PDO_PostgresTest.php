@@ -38,7 +38,7 @@ class PDO_PostgresTest extends PHPUnit_Framework_TestCase
 
         $con->Execute("DROP TABLE IF EXISTS test");
 
-        $create = $con->Prepare("CREATE TABLE test (id INT NOT NULL AUTO_INCREMENT, val INT, PRIMARY KEY(id), ENGINE InnoDB)");
+        $create = $con->Prepare("CREATE TABLE test (id SERIAL, val INT, PRIMARY KEY(id))");
         $con->Execute($create);
         $insert = $con->Prepare("INSERT INTO test (val) VALUES (?)");
         $con->Execute($insert, array(1));
