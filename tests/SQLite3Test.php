@@ -77,7 +77,7 @@ class SQLite3Test extends PHPUnit_Framework_TestCase
         $this->assertEquals(array(0=>1,'id'=>1), $con->CacheGetRow(5, 'SELECT 1 AS id'));
 
         $this->assertEquals(" CASE WHEN id is null THEN 0 ELSE id END ", $con->IfNull('id', 0));
-        $this->assertEquals("CONCAT(a,b)", $con->Concat('a', 'b'));
+        $this->assertEquals("a||b", $con->Concat('a', 'b'));
 
         $this->assertEquals(true, in_array('adodb_test', $con->MetaDatabases()));
         $this->assertEquals(array('test'), $con->MetaTables());
