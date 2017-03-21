@@ -84,7 +84,7 @@ class SQLite3Test extends PHPUnit_Framework_TestCase
         $this->assertEquals(true, $cols['ID']->primary_key);
         $this->assertEquals(0, $cols['ID']->not_null);
         $this->assertEquals(false, $cols['VAL']->not_null);
-        $this->assertEquals('int', $cols['ID']->type);
+        $this->assertEquals('INT', $cols['ID']->type);
         $this->assertEquals('id', $cols['ID']->name);
         $this->assertEquals(array(), $con->MetaIndexes('test'));
         $this->assertEquals(array('ID'=>'id', 'VAL'=>'val'), $con->MetaColumnNames('test'));

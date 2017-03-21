@@ -69,10 +69,8 @@ class PDO_PostgresTest extends PHPUnit_Framework_TestCase
         $rs = $con->Execute("SELECT id FROM test");
         $this->assertEquals(2, $rs->NumRows());
 
-        $this->assertNotEquals(false, $con->CreateSequence());
-        $this->assertEquals(1, $con->GenID());
-        $this->assertEquals(2, $con->GenID());
-        $this->assertNotEquals(false, $con->DropSequence());
+        $this->assertEquals(false, $con->CreateSequence());
+        $this->assertEquals(false, $con->DropSequence());
 
         $this->assertEquals("1", $con->GetOne('SELECT 1 AS id'));
         $this->assertEquals("1", $con->CacheGetOne(5, 'SELECT 1 AS id'));
