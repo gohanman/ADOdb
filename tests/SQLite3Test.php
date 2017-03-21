@@ -23,7 +23,7 @@ class SQLite3Test extends PHPUnit_Framework_TestCase
 
         $this->assertEquals(true, is_numeric($con->Time()), 'Could not get time');
         $this->assertEquals('adodb_date(\'Y-m-d\')', $con->SQLDate('Y-m-d'));
-        $this->assertEquals('DATE_FORMAT(foo,\'%Y-%m-%d\')', $con->SQLDate('Y-m-d', 'foo'));
+        $this->assertEquals('adodb_date2(\'Y-m-d\',foo)', $con->SQLDate('Y-m-d', 'foo'));
 
         $this->assertInternalType('array', $con->Prepare('SELECT 1'));
         $this->assertInternalType('array', $con->PrepareSP('SELECT 1'));
