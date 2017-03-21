@@ -58,15 +58,10 @@ class PDO_PostgresTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(0, $con->ErrorNo());
         $this->assertEquals(array('id'), $con->MetaPrimaryKeys('test'));
 
-        $con->BeginTrans();
-        $con->Execute("INSERT INTO test (val) VALUES (3)");
-        $con->RollbackTrans();
         $rs = $con->Execute("SELECT id FROM test");
         $this->assertEquals(1, $rs->NumRows());
 
-        $con->BeginTrans();
         $con->Execute("INSERT INTO test (val) VALUES (3)");
-        $con->CommitTrans();
         $rs = $con->Execute("SELECT id FROM test");
         $this->assertEquals(2, $rs->NumRows());
 
