@@ -1,6 +1,6 @@
 <?php
 
-class MySQLi extends PHPUnit_Framework_TestCase
+class MySQLiTest extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
