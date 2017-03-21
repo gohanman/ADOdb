@@ -9,7 +9,7 @@ sudo: false
 install:
     - mysql -u root -e "CREATE DATABASE adodb_test;"
     - psql -U postgres -c "CREATE DATABASE adodb_test;"
-    - echo '{ "postgres": { "user":"postgres", "password":"" }, "mysql": { "user":"root", "password":"" } }' > tests/credentials.json
+    - sh tests/travis.sh
 
 script:
     - phpunit -d max_execution_time=0 -c phpunit.xml
