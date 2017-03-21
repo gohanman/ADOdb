@@ -81,10 +81,8 @@ class Postgres9Test extends PHPUnit_Framework_TestCase
         $this->assertEquals(true, in_array('adodb_test', $con->MetaDatabases()));
         $this->assertEquals(array('test'), $con->MetaTables());
         $cols = $con->MetaColumns('test');
-        $this->assertEquals(true, $cols['ID']->auto_increment);
         $this->assertEquals(true, $cols['ID']->primary_key);
         $this->assertEquals(true, $cols['ID']->not_null);
-        $this->assertEquals(false, $cols['VAL']->auto_increment);
         $this->assertEquals(false, $cols['VAL']->primary_key);
         $this->assertEquals(false, $cols['VAL']->not_null);
         $this->assertEquals('int', $cols['ID']->type);
