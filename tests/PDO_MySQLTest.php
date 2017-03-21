@@ -95,5 +95,99 @@ class PDO_MySQLTest extends PHPUnit_Framework_TestCase
         $con->Execute("DROP TABLE IF EXISTS test");
         $this->assertEquals(true, $con->Close());
     }
+
+    public function testActiveRecord()
+    {
+        if (!class_exists('Person')) {
+            include(__DIR__ . '/ActiveRecordClasses.php');
+        }
+        $credentials = json_decode(file_get_contents(__DIR__ . '/credentials.json'), true);
+        $credentials = $credentials['mysql'];
+        $db = ADONewConnection('pdo');
+        $db->Connect('mysql:host=localhost;dbname=adodb_test', $credentials['user'], $credentials['password']);
+        ADOdb_Active_Record::SetDatabaseAdapter($db);
+
+        $db->Execute("CREATE TABLE `persons` (
+                        `id` int(10) unsigned NOT NULL auto_increment,
+                        `name_first` varchar(100) NOT NULL default '',
+                        `name_last` varchar(100) NOT NULL default '',
+                        `favorite_color` varchar(100) NOT NULL default '',
+                        PRIMARY KEY  (`id`)
+                    ) ENGINE=MyISAM;
+                   ");
+
+        $db->Execute("CREATE TABLE `children` (
+                        `id` int(10) unsigned NOT NULL auto_increment,
+                        `person_id` int(10) unsigned NOT NULL,
+                        `name_first` varchar(100) NOT NULL default '',
+                        `name_last` varchar(100) NOT NULL default '',
+                        `favorite_pet` varchar(100) NOT NULL default '',
+                        PRIMARY KEY  (`id`)
+                    ) ENGINE=MyISAM;
+                   ");
+
+        $person = new Person('persons');
+        ADOdb_Active_Record::$_quoteNames = '111';
+        $this->assertEquals(array('id', 'name_first', 'name_last', 'favorite_color'), $person->getAttributeNames());
+
+        $person = new Person('persons');
+        $person->name_first = 'Andi';
+        $person->name_last  = 'Gutmans';
+        $this->assertEquals(false, $person->save()); // this save() will fail on INSERT as favorite_color is a must fill...
+
+        $person = new Person('persons');
+        $person->name_first     = 'Andi';
+        $person->name_last      = 'Gutmans';
+        $person->favorite_color = 'blue';
+        $this->assertEquals(true, $person->save()); // this save will perform an INSERT successfully
+
+        $person->favorite_color = 'red';
+        $this->assertEquals(1, $person->save()); // this save() will perform an UPDATE
+
+        $person = new Person('persons');
+        $person->name_first     = 'John';
+        $person->name_last      = 'Lim';
+        $person->favorite_color = 'lavender';
+        $this->assertEquals(true, $person->save()); // this save will perform an INSERT successfully
+
+        $person2 = new Person('persons');
+        $person2->Load('id=2');
+        $activeArr = $db->GetActiveRecordsClass($class = "Person",$table = "persons","id=".$db->Param(0),array(2));
+        $person2 = $activeArr[0];
+        $this->assertEquals('John', $person2->name_first);
+        $this->assertEquals('Person', get_class($person2));
+
+        $db->Execute("insert into children (person_id,name_first,name_last) values (2,'Jill','Lim')");
+        $db->Execute("insert into children (person_id,name_first,name_last) values (2,'Joan','Lim')");
+        $db->Execute("insert into children (person_id,name_first,name_last) values (2,'JAMIE','Lim')");
+
+        $newperson2 = new Person();
+        $person2->HasMany('children','person_id');
+        $person2->Load('id=2');
+        $person2->name_last='green';
+        $c = $person2->children;
+        $person2->save();
+        $this->assertInternalType('array', $c);
+        $this->assertEquals(3, sizeof($c));
+        $this->assertEquals('Jill', $c[0]->name_first);
+        $this->assertEquals('Joan', $c[1]->name_first);
+        $this->assertEquals('JAMIE', $c[2]->name_first);
+
+        $ch = new Child('children',array('id'));
+        $ch->BelongsTo('person','person_id','id');
+        $ch->Load('id=1');
+        $this->assertEquals('Jill', $ch->name_first);
+
+        $p = $ch->person;
+        $this->assertEquals('John', $p->name_first);
+
+        $p->hasMany('children','person_id');
+        $p->LoadRelations('children', "	Name_first like 'J%' order by id",1,2);
+        $this->assertEquals(2, sizeof($p->children));
+        $this->assertEquals('JAMIE', $p->children[1]->name_first);
+
+        $db->Execute('DROP TABLE persons');
+        $db->Execute('DROP TABLE children');
+    }
 }
 

@@ -11,7 +11,9 @@
 		}
 	}
 
-	$db = NewADOConnection('mysql://root@localhost/northwind?persist');
+	//$db = NewADOConnection('mysql://root@localhost/northwind?persist');
+    $db = ADONewConnection('mysql');
+    $db->Connect('localhost', 'root', 'is4c', 'adodb_test');
 	$db->debug=1;
 	ADOdb_Active_Record::SetDatabaseAdapter($db);
 
@@ -56,13 +58,13 @@
 	 *  }
 	 */
 
-	$person = new Person();
+	$person = new Person('persons');
 	$person->name_first = 'Andi';
 	$person->name_last  = 'Gutmans';
 	$person->save(); // this save() will fail on INSERT as favorite_color is a must fill...
 
 
-	$person = new Person();
+	$person = new Person('persons');
 	$person->name_first     = 'Andi';
 	$person->name_last      = 'Gutmans';
 	$person->favorite_color = 'blue';
@@ -73,17 +75,17 @@
 	$person->favorite_color = 'red';
 	$person->save(); // this save() will perform an UPDATE
 
-	$person = new Person();
+	$person = new Person('persons');
 	$person->name_first     = 'John';
 	$person->name_last      = 'Lim';
 	$person->favorite_color = 'lavender';
 	$person->save(); // this save will perform an INSERT successfully
 
 	// load record where id=2 into a new ADOdb_Active_Record
-	$person2 = new Person();
+	$person2 = new Person('persons');
 	$person2->Load('id=2');
 
-	$activeArr = $db->GetActiveRecordsClass($class = "Person",$table = "Persons","id=".$db->Param(0),array(2));
+	$activeArr = $db->GetActiveRecordsClass($class = "Person",$table = "persons","id=".$db->Param(0),array(2));
 	$person2 = $activeArr[0];
 	echo "<p>Name (should be John): ",$person->name_first, " <br> Class (should be Person): ",get_class($person2),"<br>";
 
@@ -91,7 +93,7 @@
 	$db->Execute("insert into children (person_id,name_first,name_last) values (2,'Joan','Lim')");
 	$db->Execute("insert into children (person_id,name_first,name_last) values (2,'JAMIE','Lim')");
 
-	$newperson2 = new Person();
+	$newperson2 = new Person('persons');
 	$person2->HasMany('children','person_id');
 	$person2->Load('id=2');
 	$person2->name_last='green';
