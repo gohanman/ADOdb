@@ -11,12 +11,12 @@ class PDO_PostgresTest extends PHPUnit_Framework_TestCase
         $this->assertInternalType('object', $con, 'Could not get driver object');
         $this->assertEquals(false, $con->IsConnected());
 
+        $con->Connect('pgsql:host=localhost;dbname=adodb_test', $credentials['user'], $credentials['password']);
+        $this->assertEquals(true, $con->IsConnected(), 'Could not connect');
+
         $info = $con->ServerInfo();
         $this->assertArrayHasKey('description', $info);
         $this->assertArrayHasKey('version', $info);
-
-        $con->Connect('pgsql:host=localhost;dbname=adodb_test', $credentials['user'], $credentials['password']);
-        $this->assertEquals(true, $con->IsConnected(), 'Could not connect');
 
         $this->assertEquals(true, is_numeric($con->Time()), 'Could not get time');
         $this->assertEquals('CURRENT_DATE', $con->SQLDate('Y-m-d'));
