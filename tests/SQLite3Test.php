@@ -92,7 +92,7 @@ class SQLite3Test extends PHPUnit_Framework_TestCase
         $this->assertEquals(array('ID'=>'id', 'VAL'=>'val'), $con->MetaColumnNames('test'));
 
         $con->Execute("DROP TABLE IF EXISTS test");
-        $this->assertEquals(null, $con->Close());
+        $this->assertEquals(true, $con->Close());
         unlink($db_file);
     }
 }

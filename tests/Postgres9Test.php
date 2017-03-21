@@ -75,7 +75,7 @@ class Postgres9Test extends PHPUnit_Framework_TestCase
         $this->assertEquals(array(0=>1,'id'=>1), $con->GetRow('SELECT 1 AS id'));
         $this->assertEquals(array(0=>1,'id'=>1), $con->CacheGetRow(5, 'SELECT 1 AS id'));
 
-        $this->assertEquals(" IFNULL(id, 0) ", $con->IfNull('id', 0));
+        $this->assertEquals(" coalesce(id, 0) ", $con->IfNull('id', 0));
         $this->assertEquals("a||b", $con->Concat('a', 'b'));
 
         $this->assertEquals(true, in_array('adodb_test', $con->MetaDatabases()));
