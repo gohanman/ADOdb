@@ -27,6 +27,10 @@ class Postgres9Test extends PHPUnit_Framework_TestCase
         $this->assertEquals('TO_CHAR(foo,\'YYYY-MM-DD\')', $con->SQLDate('Y-m-d', 'foo'));
 
         $this->assertEquals('foo', $con->Prepare('foo'));
+        $this->assertEquals("'foo'", $con->Quote('foo'));
+        $byRef = 'foo';
+        $con->q($byRef);
+        $this->assertEquals("'foo'", $byRef);
         $this->assertEquals('foo', $con->PrepareSP('foo'));
 
         $this->assertEquals("'foo'", $con->qstr('foo'));
@@ -57,7 +61,40 @@ class Postgres9Test extends PHPUnit_Framework_TestCase
         $rs = $con->Execute("SELECT id FROM test");
         $this->assertEquals(2, $rs->NumRows());
 
+        $this->assertEquals(false, $con->RowLock('test', 'WHERE id=1'));
+        $this->assertNotEquals(false, $con->CreateSequence());
+        $this->assertEquals(1, $con->GenID());
+        $this->assertEquals(2, $con->GenID());
+        $this->assertNotEquals(false, $con->DropSequence());
+
+        $this->assertEquals("1", $con->GetOne('SELECT 1 AS id'));
+        $this->assertEquals("1", $con->CacheGetOne(5, 'SELECT 1 AS id'));
+        $this->assertEquals(array(0=>1), $con->GetCol('SELECT 1 AS id'));
+        $this->assertEquals(array(0=>1), $con->CacheGetCol(5, 'SELECT 1 AS id'));
+        $this->assertEquals(array(0=>array(0=>1,'id'=>1)), $con->GetArray('SELECT 1 AS id'));
+        $this->assertEquals(array(0=>array(0=>1,'id'=>1)), $con->CacheGetArray('SELECT 1 AS id'));
+        $this->assertEquals(array(0=>1,'id'=>1), $con->GetRow('SELECT 1 AS id'));
+        $this->assertEquals(array(0=>1,'id'=>1), $con->CacheGetRow(5, 'SELECT 1 AS id'));
+
+        $this->assertEquals(" IFNULL(id, 0) ", $con->IfNull('id', 0));
+        $this->assertEquals("a||b", $con->Concat('a', 'b'));
+
+        $this->assertEquals(true, in_array('adodb_test', $con->MetaDatabases()));
+        $this->assertEquals(array('test'), $con->MetaTables());
+        $cols = $con->MetaColumns('test');
+        $this->assertEquals(true, $cols['ID']->auto_increment);
+        $this->assertEquals(true, $cols['ID']->primary_key);
+        $this->assertEquals(true, $cols['ID']->not_null);
+        $this->assertEquals(false, $cols['VAL']->auto_increment);
+        $this->assertEquals(false, $cols['VAL']->primary_key);
+        $this->assertEquals(false, $cols['VAL']->not_null);
+        $this->assertEquals('int', $cols['ID']->type);
+        $this->assertEquals('id', $cols['ID']->name);
+        $this->assertEquals(array(), $con->MetaIndexes('test'));
+        $this->assertEquals(array('ID'=>'id', 'VAL'=>'val'), $con->MetaColumnNames('test'));
+
         $con->Execute("DROP TABLE IF EXISTS test");
+        $this->assertEquals(null, $con->Close());
     }
 }
 
