@@ -4,8 +4,9 @@ class MySQLiTest extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
+        var_dump(file_exists(      __DIR__ . '/credentials.json'));
         $credentials = json_decode(__DIR__ . '/credentials.json', true);
-        var_dump($credentials);
+        var_dump(json_last_error());
         $credentials = $credentials['mysql'];
 
         $con = ADONewConnection('mysqli');
