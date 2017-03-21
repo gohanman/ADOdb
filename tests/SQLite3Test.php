@@ -25,8 +25,8 @@ class SQLite3Test extends PHPUnit_Framework_TestCase
         $this->assertEquals('adodb_date(\'Y-m-d\')', $con->SQLDate('Y-m-d'));
         $this->assertEquals('adodb_date2(\'Y-m-d\',foo)', $con->SQLDate('Y-m-d', 'foo'));
 
-        $this->assertInternalType('array', $con->Prepare('SELECT 1'));
-        $this->assertInternalType('array', $con->PrepareSP('SELECT 1'));
+        $this->assertEquals('SELECT 1', $con->Prepare('SELECT 1'));
+        $this->assertEquals('SELECT 1', $con->PrepareSP('SELECT 1'));
 
         $this->assertEquals("'foo'", $con->qstr('foo'));
         $this->assertEquals('?', $con->Param('foo'));
