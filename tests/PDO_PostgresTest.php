@@ -4,7 +4,7 @@ class PDO_PostgresTest extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
-        $credentials = json_decode(__DIR__ . '/credentials.json', true);
+        $credentials = json_decode(file_get_contents(__DIR__ . '/credentials.json'), true);
         $credentials = $credentials['postgres'];
 
         $con = ADONewConnection('pdo');
