@@ -94,7 +94,7 @@ class PDO_PostgresTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(true, $cols['ID']->not_null);
         $this->assertEquals('int4', $cols['ID']->type);
         $this->assertEquals('id', $cols['ID']->name);
-        $this->assertEquals(array(), $con->MetaIndexes('test'));
+        $this->assertEquals(false, $con->MetaIndexes('test'));
         $this->assertEquals(array('ID'=>'id', 'VAL'=>'val'), $con->MetaColumnNames('test'));
 
         $con->Execute("DROP TABLE IF EXISTS test");
