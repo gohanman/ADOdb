@@ -5,6 +5,8 @@
         <file>tests/PDO_MySQLTest.php</file>
         <file>tests/Postgres9Test.php</file>
         <file>tests/PDO_PostgresTest.php</file>
+        <file>tests/SQLite3Test.php</file>
+        <file>tests/PDO_SQLiteTest.php</file>
         </testsuite>
     </testsuites>
 </phpunit>

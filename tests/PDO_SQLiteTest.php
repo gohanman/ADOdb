@@ -4,6 +4,10 @@ class PDO_SQLiteTest extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
+        if (!class_exists('PDO')) {
+            echo "Skipping PDO_SQLite tests" . PHP_EOL;
+            return;
+        }
         $db_file = tempnam(sys_get_temp_dir(), 'sql') . '.db';
 
         $con = ADONewConnection('pdo');

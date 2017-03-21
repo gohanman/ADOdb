@@ -4,6 +4,10 @@ class SQLite3Test extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
+        if (!class_exists('SQLite3')) {
+            echo "Skipping SQLite3 tests" . PHP_EOL;
+            return;
+        }
         $db_file = tempnam(sys_get_temp_dir(), 'sql') . '.db';
 
         $con = ADONewConnection('sqlite3');

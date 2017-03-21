@@ -4,6 +4,10 @@ class MySQLiTest extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
+        if (!function_exists('mysqli_connect')) {
+            echo "Skipping MySQLi tests" . PHP_EOL;
+            return;
+        }
         $credentials = json_decode(file_get_contents(__DIR__ . '/credentials.json'), true);
         $credentials = $credentials['mysql'];
 

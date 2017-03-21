@@ -4,6 +4,10 @@ class Postgres9Test extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
+        if (!function_exists('pg_connect')) {
+            echo "Skipping Postgres9 tests" . PHP_EOL;
+            return;
+        }
         $credentials = json_decode(file_get_contents(__DIR__ . '/credentials.json'), true);
         $credentials = $credentials['postgres'];
 

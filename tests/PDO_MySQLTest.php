@@ -4,6 +4,10 @@ class PDO_MySQLTest extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
+        if (!class_exists('PDO')) {
+            echo "Skipping PDO_MySQL tests" . PHP_EOL;
+            return;
+        }
         $credentials = json_decode(file_get_contents(__DIR__ . '/credentials.json'), true);
         $credentials = $credentials['mysql'];
 
