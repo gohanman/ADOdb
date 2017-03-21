@@ -4,7 +4,7 @@ class Postgres9Test extends PHPUnit_Framework_TestCase
 {
     public function testDB()
     {
-        $credentials = json_decode(__DIR__ . '/credentials.json');
+        $credentials = json_decode(__DIR__ . '/credentials.json', true);
         $credentials = $credentials['postgres'];
 
         $con = ADONewConnection('postgres9');
