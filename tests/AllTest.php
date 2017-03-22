@@ -11,6 +11,8 @@ class AllTest extends PHPUnit_Framework_TestCase
             }
 
             // generic tests go here
+            $dict = NewDataDictionary($con);
+            echo (is_object($dict) ? "YES (" . get_class($dict) . ")" : "NO") . " DataDict for {$driver}" . PHP_EOL;
         }
     }
 
