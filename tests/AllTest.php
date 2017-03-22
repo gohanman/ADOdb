@@ -27,7 +27,7 @@ class AllTest extends PHPUnit_Framework_TestCase
                 $credentials = $credentials['mysql'];
                 $con = ADONewConnection('mysqli');
                 $con->Connect('localhost', $credentials['user'], $credentials['password'], 'adodb_test');
-                return $con->IsConected() ? true : false;
+                return $con->IsConnected() ? true : false;
 
             case 'pdo_mysql':
                 if (!class_exists('pdo')) {
@@ -37,7 +37,7 @@ class AllTest extends PHPUnit_Framework_TestCase
                 $credentials = $credentials['mysql'];
                 $con = ADONewConnection('pdo');
                 $con->Connect('mysql:host=localhost;dbname=adodb_test', $credentials['user'], $credentials['password']);
-                return $con->IsConected() ? true : false;
+                return $con->IsConnected() ? true : false;
 
             case 'postgres9':
                 if (!function_exists('pg_connect')) {
@@ -47,7 +47,7 @@ class AllTest extends PHPUnit_Framework_TestCase
                 $credentials = $credentials['postgres'];
                 $con = ADONewConnection('postgres9');
                 $con->Connect('localhost', $credentials['user'], $credentials['password'], 'adodb_test');
-                return $con->IsConected() ? true : false;
+                return $con->IsConnected() ? true : false;
 
             case 'pdo_pgsql':
                 if (!class_exists('pdo')) {
@@ -57,7 +57,7 @@ class AllTest extends PHPUnit_Framework_TestCase
                 $credentials = $credentials['mysql'];
                 $con = ADONewConnection('pdo');
                 $con->Connect('pgsql:host=localhost;dbname=adodb_test', $credentials['user'], $credentials['password']);
-                return $con->IsConected() ? true : false;
+                return $con->IsConnected() ? true : false;
 
             case 'sqlite3':
                 if (!class_exists('pdo')) {
@@ -66,7 +66,7 @@ class AllTest extends PHPUnit_Framework_TestCase
                 $db_file = tempnam(sys_get_temp_dir(), 'sql') . '.db';
                 $con = ADONewConnection('sqlite3');
                 $con->Connect($db_file, '', '', '');
-                return $con->IsConected() ? true : false;
+                return $con->IsConnected() ? true : false;
 
             case 'pdo_sqlite':
                 if (!class_exists('pdo')) {
@@ -75,7 +75,7 @@ class AllTest extends PHPUnit_Framework_TestCase
                 $db_file = tempnam(sys_get_temp_dir(), 'sql') . '.db';
                 $con = ADONewConnection('pdo');
                 $con->Connect('sqlite:' . $db_file, '', '', '');
-                return $con->IsConected() ? true : false;
+                return $con->IsConnected() ? true : false;
         }
 
         return false;
