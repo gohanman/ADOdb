@@ -8,9 +8,32 @@ class AllTest extends PHPUnit_Framework_TestCase
             $con = $this->getConnection($driver);
             if ($con === false) {
                 echo "No {$driver} connection; skipping those tests" . PHP_EOL;
+                continue;
             }
 
             // generic tests go here
+
+            // get and getcache methods without an underlying table
+            $this->assertEquals("1", $con->GetOne('SELECT 1 AS id'));
+            $this->assertEquals("1", $con->CacheGetOne(5, 'SELECT 1 AS id'));
+            $this->assertEquals(array(0=>1), $con->GetCol('SELECT 1 AS id'));
+            $this->assertEquals(array(0=>1), $con->CacheGetCol(5, 'SELECT 1 AS id'));
+            $this->assertEquals(array(0=>array(0=>1,'id'=>1)), $con->GetArray('SELECT 1 AS id'));
+            $this->assertEquals(array(0=>array(0=>1,'id'=>1)), $con->CacheGetArray('SELECT 1 AS id'));
+            $this->assertEquals(array(0=>1,'id'=>1), $con->GetRow('SELECT 1 AS id'));
+            $this->assertEquals(array(0=>1,'id'=>1), $con->CacheGetRow(5, 'SELECT 1 AS id'));
+
+            $info = $con->ServerInfo();
+            $this->assertArrayHasKey('description', $info);
+            $this->assertArrayHasKey('version', $info);
+
+            $this->assertEquals(true, is_numeric($con->Time()), 'Could not get time');
+
+            // sequence methods
+            $this->assertNotEquals(false, $con->CreateSequence());
+            $this->assertEquals(1, $con->GenID());
+            $this->assertEquals(2, $con->GenID());
+            $this->assertNotEquals(false, $con->DropSequence());
         }
     }
 

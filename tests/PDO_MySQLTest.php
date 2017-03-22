@@ -18,11 +18,6 @@ class PDO_MySQLTest extends PHPUnit_Framework_TestCase
         $con->Connect('mysql:host=localhost;dbname=adodb_test', $credentials['user'], $credentials['password']);
         $this->assertEquals(true, $con->IsConnected(), 'Could not connect');
 
-        $info = $con->ServerInfo();
-        $this->assertArrayHasKey('description', $info);
-        $this->assertArrayHasKey('version', $info);
-
-        $this->assertEquals(true, is_numeric($con->Time()), 'Could not get time');
         $this->assertEquals('DATE_FORMAT(NOW(),\'%Y-%m-%d\')', $con->SQLDate('Y-m-d'));
         $this->assertEquals('DATE_FORMAT(foo,\'%Y-%m-%d\')', $con->SQLDate('Y-m-d', 'foo'));
 
@@ -65,15 +60,6 @@ class PDO_MySQLTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(0, $con->GenID());
         $this->assertEquals(0, $con->GenID());
         $this->assertNotEquals(false, $con->DropSequence());
-
-        $this->assertEquals("1", $con->GetOne('SELECT 1 AS id'));
-        $this->assertEquals("1", $con->CacheGetOne(5, 'SELECT 1 AS id'));
-        $this->assertEquals(array(0=>1), $con->GetCol('SELECT 1 AS id'));
-        $this->assertEquals(array(0=>1), $con->CacheGetCol(5, 'SELECT 1 AS id'));
-        $this->assertEquals(array(0=>array(0=>1,'id'=>1)), $con->GetArray('SELECT 1 AS id'));
-        $this->assertEquals(array(0=>array(0=>1,'id'=>1)), $con->CacheGetArray('SELECT 1 AS id'));
-        $this->assertEquals(array(0=>1,'id'=>1), $con->GetRow('SELECT 1 AS id'));
-        $this->assertEquals(array(0=>1,'id'=>1), $con->CacheGetRow(5, 'SELECT 1 AS id'));
 
         $this->assertEquals(" CASE WHEN id is null THEN 0 ELSE id END ", $con->IfNull('id', 0));
         $this->assertEquals("CONCAT(a,b)", $con->Concat('a', 'b'));

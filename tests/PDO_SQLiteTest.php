@@ -17,11 +17,6 @@ class PDO_SQLiteTest extends PHPUnit_Framework_TestCase
         $con->Connect('sqlite:' . $db_file, '', '', '');
         $this->assertEquals(true, $con->IsConnected(), 'Could not connect');
 
-        $info = $con->ServerInfo();
-        $this->assertArrayHasKey('description', $info);
-        $this->assertArrayHasKey('version', $info);
-
-        $this->assertEquals(true, is_numeric($con->Time()), 'Could not get time');
         /**
           The pdo_sqlite class does not implement SQLDate. The base
           pdo class calls SQLDate on its $_driver memember. Since all the PDO subtypes
@@ -72,15 +67,6 @@ class PDO_SQLiteTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(1, $con->GenID());
         $this->assertEquals(2, $con->GenID());
         $this->assertNotEquals(false, $con->DropSequence());
-
-        $this->assertEquals("1", $con->GetOne('SELECT 1 AS id'));
-        $this->assertEquals("1", $con->CacheGetOne(5, 'SELECT 1 AS id'));
-        $this->assertEquals(array(0=>1), $con->GetCol('SELECT 1 AS id'));
-        $this->assertEquals(array(0=>1), $con->CacheGetCol(5, 'SELECT 1 AS id'));
-        $this->assertEquals(array(0=>array(0=>1,'id'=>1)), $con->GetArray('SELECT 1 AS id'));
-        $this->assertEquals(array(0=>array(0=>1,'id'=>1)), $con->CacheGetArray('SELECT 1 AS id'));
-        $this->assertEquals(array(0=>1,'id'=>1), $con->GetRow('SELECT 1 AS id'));
-        $this->assertEquals(array(0=>1,'id'=>1), $con->CacheGetRow(5, 'SELECT 1 AS id'));
 
         $this->assertEquals(" CASE WHEN id is null THEN 0 ELSE id END ", $con->IfNull('id', 0));
         $this->assertEquals("a||b", $con->Concat('a', 'b'));
